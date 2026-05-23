@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project]
+name = "ai-repo-workspace"
+version = "0.1.0"
+description = "AI-native repository intelligence platform"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "packages/shared/src/shared",
+    "packages/parser/src/parser",
+    "packages/graph-engine/src/graph_engine",
+    "packages/embeddings/src/embeddings",
+    "packages/retrieval/src/retrieval",
+    "packages/prompts/src/prompts",
+    "apps/api/app",
+    "apps/workers/app",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "C4"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+warn_redundant_casts = true

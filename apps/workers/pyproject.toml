@@ -1,0 +1,18 @@
+[project]
+name = "workers"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "celery[redis]>=5.4.0",
+    "redis>=5.0.0",
+    "structlog>=24.1.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
