@@ -2,18 +2,15 @@ FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app/packages/shared/src
+ENV PYTHONPATH=/app/packages/shared/src:/app/packages/parser/src
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    git \
+    curl git \
     && rm -rf /var/lib/apt/lists/*
 
 FROM base AS development
-
-RUN pip install --no-cache-dir uvicorn[standard] fastapi
 
 COPY packages/shared/ /app/packages/shared/
 RUN pip install -e /app/packages/shared
