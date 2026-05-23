@@ -1,0 +1,63 @@
+# Node
+node_modules/
+.git/
+.github/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+.docker/
+data/
+pgdata/
+neo4j_data/
+qdrant_storage/
+ollamadata/
+
+# Logs
+*.log
+logs/
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# Misc
+*.pid
+*.sock
+.tmp/
+tmp/
+
+# Docs (keep only source)
+docs/node_modules/
