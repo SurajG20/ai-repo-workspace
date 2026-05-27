@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import structlog
 
-from .main import app
+from ..main import app
 
 logger = structlog.get_logger(__name__)
 

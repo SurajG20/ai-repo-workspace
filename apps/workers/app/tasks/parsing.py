@@ -14,7 +14,7 @@ from parser import (
     detect_language,
 )
 
-from .main import app
+from ..main import app
 
 logger = structlog.get_logger(__name__)
 
