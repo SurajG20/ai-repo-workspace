@@ -34,7 +34,7 @@ class QAPipeline:
         provider: str | None = None,
         max_tokens: int = 1024,
     ) -> QAResult:
-        if provider and provider != self._llm.provider:
+        if provider and self._llm is not None and provider != self._llm.provider:
             self._llm = get_llm_client(provider)
 
         started = time.perf_counter()
@@ -50,21 +50,36 @@ class QAPipeline:
         messages = build_qa_messages(question, [h.to_dict() for h in hits], self._repository_name)
 
         llm_started = time.perf_counter()
-        try:
-            answer_text = await self._llm.complete(
-                messages,
-                max_tokens=max_tokens,
-                temperature=0.2,
+        if self._llm is None:
+            llm_error = (
+                "No LLM provider configured. Set LLM_PROVIDER plus its API key "
+                "(OPENAI_API_KEY, ANTHROPIC_API_KEY) or OLLAMA_BASE_URL in .env."
             )
-            llm_error = None
-        except Exception as e:
-            logger.warning("llm_complete_failed", repo=repository_id, error=str(e))
             answer_text = (
-                "I could not generate an answer because the LLM provider "
-                f"failed ({type(e).__name__}: {str(e)[:200]}). "
-                "The retrieval results below still show what was found."
+                "No LLM provider is configured, so I can only show the "
+                "deterministic retrieval results (symbols and graph matches) "
+                "for this question."
             )
-            llm_error = str(e)[:300]
+            model = "none"
+            provider_name = "none"
+        else:
+            try:
+                answer_text = await self._llm.complete(
+                    messages,
+                    max_tokens=max_tokens,
+                    temperature=0.2,
+                )
+                llm_error = None
+            except Exception as e:
+                logger.warning("llm_complete_failed", repo=repository_id, error=str(e))
+                answer_text = (
+                    "I could not generate an answer because the LLM provider "
+                    f"failed ({type(e).__name__}: {str(e)[:200]}). "
+                    "The retrieval results below still show what was found."
+                )
+                llm_error = str(e)[:300]
+            model = self._llm.model
+            provider_name = self._llm.provider
 
         llm_ms = round((time.perf_counter() - llm_started) * 1000, 2)
 
@@ -87,8 +102,8 @@ class QAPipeline:
             question=question,
             answer=answer_text,
             context_blocks=context_blocks,
-            model=self._llm.model,
-            provider=self._llm.provider,
+            model=model,
+            provider=provider_name,
         )
 
         logger.info(
@@ -105,8 +120,8 @@ class QAPipeline:
                 "hits": [h.to_dict() for h in hits],
                 "trace": retrieval.trace.to_dict(),
                 "llm": {
-                    "model": self._llm.model,
-                    "provider": self._llm.provider,
+                    "model": model,
+                    "provider": provider_name,
                     "duration_ms": llm_ms,
                     "error": llm_error,
                 },

@@ -172,11 +172,18 @@ class OllamaLLMClient(BaseLLMClient):
         await self._client.aclose()
 
 
-def get_llm_client(provider: str | None = None) -> BaseLLMClient:
-    """Factory: provider from env LLM_PROVIDER (openai | anthropic | ollama)."""
+def get_llm_client(provider: str | None = None) -> BaseLLMClient | None:
+    """Factory: provider from env LLM_PROVIDER (openai | anthropic | ollama).
+
+    Returns None when the selected provider has no credentials configured,
+    so callers can degrade to retrieval-only answers.
+    """
     provider = provider or os.getenv("LLM_PROVIDER", "openai")
-    if provider == "anthropic":
-        return AnthropicLLMClient()
-    if provider == "ollama":
-        return OllamaLLMClient()
-    return OpenAILLMClient()
+    try:
+        if provider == "anthropic":
+            return AnthropicLLMClient()
+        if provider == "ollama":
+            return OllamaLLMClient()
+        return OpenAILLMClient()
+    except Exception:
+        return None
