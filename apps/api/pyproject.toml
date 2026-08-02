@@ -21,6 +21,8 @@ dependencies = [
     "structlog>=24.1.0",
     "cryptography>=42.0.0",
     "gitpython>=3.1.43",
+    "retrieval>=0.1.0",
+    "prompts>=0.1.0",
 ]
 
 [project.optional-dependencies]

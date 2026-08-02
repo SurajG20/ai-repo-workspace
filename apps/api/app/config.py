@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     ollama_base_url: str = "http://localhost:11434"
 
+    llm_provider: str = "openai"
+    llm_model: str = ""
+
     embedding_provider: str = "openai"
     embedding_model: str = "text-embedding-3-small"
 
