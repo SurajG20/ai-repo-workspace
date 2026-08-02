@@ -32,19 +32,17 @@ class Neo4jClient:
             yield session
             await session.close()
 
+    async def _execute(self, tx, query: str, params: dict) -> list:
+        result = await tx.run(query, params or {})
+        return await result.data()
+
     async def execute_write(self, query: str, params: dict | None = None) -> list:
         async with self._driver.session() as session:
-            result = await session.execute_write(
-                lambda tx: tx.run(query, params or {}).data()
-            )
-            return result
+            return await session.execute_write(self._execute, query, params or {})
 
     async def execute_read(self, query: str, params: dict | None = None) -> list:
         async with self._driver.session() as session:
-            result = await session.execute_read(
-                lambda tx: tx.run(query, params or {}).data()
-            )
-            return result
+            return await session.execute_read(self._execute, query, params or {})
 
     async def health_check(self) -> bool:
         try:

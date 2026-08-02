@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import ForeignKey, Integer, SmallInteger, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -57,7 +57,7 @@ class IndexingError(Base):
     file_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("repository_files.id"))
     error_type: Mapped[str] = mapped_column(String(64), nullable=False)
     error_message: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     job: Mapped["IndexingJob"] = relationship(back_populates="errors")
 
@@ -69,4 +69,4 @@ class WorkerHeartbeat(Base):
     worker_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     current_job_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True))
     status: Mapped[str] = mapped_column(String(32), default="idle")
-    last_heartbeat: Mapped[datetime] = mapped_column(default=utcnow)
+    last_heartbeat: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

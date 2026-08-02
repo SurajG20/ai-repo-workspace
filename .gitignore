@@ -49,3 +49,9 @@ coverage.xml
 # Misc
 *.pid
 *.sock
+
+# Generated tree-sitter grammars (build via packages/parser/setup_grammars.py)
+packages/parser/grammars/
+
+# Celery beat schedule db
+apps/workers/celerybeat-schedule*

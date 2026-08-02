@@ -2,7 +2,7 @@ services:
   backend:
     environment:
       - API_DEBUG=true
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
+    command: ["sh", "/app/api-entrypoint.sh", "--reload", "--log-level", "debug"]
 
   frontend:
     environment:

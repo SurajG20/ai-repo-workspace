@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import os
 from pathlib import Path
 
@@ -25,7 +26,7 @@ class TreeSitterParser:
         if grammars_dir is None:
             grammars_dir = os.environ.get(
                 "GRAMMARS_DIR",
-                str(Path(__file__).parent.parent.parent.parent / "grammars"),
+                str(Path(__file__).parent.parent.parent / "grammars"),
             )
         self._grammars_dir = Path(grammars_dir)
         self._loaded: dict[str, Language] = {}
@@ -40,10 +41,16 @@ class TreeSitterParser:
                 f"Grammar not found: {so_path}. Run setup_grammars.py first."
             )
 
-        ts_lang = Language(str(so_path), lang.tree_sitter_name)
+        ts_lang = self._load_shared_language(str(so_path), lang.tree_sitter_name)
         self._loaded[lang.name] = ts_lang
         logger.info("grammar_loaded", language=lang.name, path=str(so_path))
         return ts_lang
+
+    def _load_shared_language(self, so_path: str, symbol: str) -> Language:
+        lib = ctypes.CDLL(so_path)
+        getter = getattr(lib, f"tree_sitter_{symbol}")
+        getter.restype = ctypes.c_void_p
+        return Language(getter())
 
     def parse_file(self, file_path: str, source: bytes) -> "tuple[object, LangModel] | None":
         lang_model = detect_language(file_path)

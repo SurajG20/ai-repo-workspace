@@ -21,3 +21,10 @@ app.conf.update(
     task_acks_late=True,
     worker_prefetch_multiplier=1,
 )
+
+app.conf.beat_schedule = {
+    "dispatch-pending-jobs": {
+        "task": "dispatch_pending_jobs",
+        "schedule": 5.0,
+    },
+}

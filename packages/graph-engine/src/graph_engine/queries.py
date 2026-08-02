@@ -12,18 +12,19 @@ class GraphQueries:
         self._client = client or Neo4jClient()
 
     async def get_call_graph(self, repository_id: str, depth: int = 3) -> list[dict]:
+        max_depth = min(max(int(depth), 1), 6)
         return await self._client.execute_read(
-            """
-            MATCH (s:Symbol {repository_id: $repo_id})-[r:CALLS*1..$depth]->(t:Symbol {repository_id: $repo_id})
+            f"""
+            MATCH (s:Symbol {{repository_id: $repo_id}})-[r:CALLS*1..{max_depth}]->(t:Symbol {{repository_id: $repo_id}})
             WHERE s.kind IN ['function', 'method']
             RETURN DISTINCT
                 s.symbol_id AS source_id, s.name AS source_name, s.file_path AS source_file,
                 t.symbol_id AS target_id, t.name AS target_name, t.file_path AS target_file,
-                length(r) AS distance
+                size(r) AS distance
             ORDER BY distance
             LIMIT 500
             """,
-            {"repo_id": repository_id, "depth": depth},
+            {"repo_id": repository_id},
         )
 
     async def get_dependency_graph(self, repository_id: str, limit: int = 200) -> list[dict]:

@@ -92,14 +92,6 @@ async def ask_question(
     from retrieval import HybridRetrievalEngine, QAPipeline, get_llm_client
 
     llm = get_llm_client(body.provider or settings.llm_provider)
-    if not llm:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "No LLM provider configured. Set LLM_PROVIDER plus its API key "
-                "(OPENAI_API_KEY, ANTHROPIC_API_KEY) or OLLAMA_BASE_URL in .env."
-            ),
-        )
 
     engine = HybridRetrievalEngine()
     try:
@@ -254,12 +246,17 @@ async def dead_code(
     triage = None
     if ai_triage and candidates:
         llm = get_llm_client(settings.llm_provider)
-        try:
-            prompt = build_dead_code_prompt(candidates[:80])
-            raw = await llm.complete([{"role": "user", "content": prompt}], max_tokens=2048)
-            triage = {"raw": raw, "model": llm.model, "provider": llm.provider}
-        except Exception as e:
-            triage = {"error": str(e)[:300]}
+        if llm is None:
+            triage = {
+                "error": "No LLM provider configured. Set LLM_PROVIDER and its API key in .env."
+            }
+        else:
+            try:
+                prompt = build_dead_code_prompt(candidates[:80])
+                raw = await llm.complete([{"role": "user", "content": prompt}], max_tokens=2048)
+                triage = {"raw": raw, "model": llm.model, "provider": llm.provider}
+            except Exception as e:
+                triage = {"error": str(e)[:300]}
 
     return {
         "repository_id": str(repo_id),
@@ -290,17 +287,22 @@ async def analyze_pr(
     summary = None
     if body.summarize:
         llm = get_llm_client(body.provider or settings.llm_provider)
-        try:
-            prompt = build_pr_analysis_prompt(
-                body.title or "",
-                body.description or "",
-                [{"path": f} for f in body.files],
-                impact["impacted_symbols"],
-            )
-            raw = await llm.complete([{"role": "user", "content": prompt}], max_tokens=2048)
-            summary = {"text": raw, "model": llm.model, "provider": llm.provider}
-        except Exception as e:
-            summary = {"error": str(e)[:300]}
+        if llm is None:
+            summary = {
+                "error": "No LLM provider configured. Set LLM_PROVIDER and its API key in .env."
+            }
+        else:
+            try:
+                prompt = build_pr_analysis_prompt(
+                    body.title or "",
+                    body.description or "",
+                    [{"path": f} for f in body.files],
+                    impact["impacted_symbols"],
+                )
+                raw = await llm.complete([{"role": "user", "content": prompt}], max_tokens=2048)
+                summary = {"text": raw, "model": llm.model, "provider": llm.provider}
+            except Exception as e:
+                summary = {"error": str(e)[:300]}
 
     return {
         "repository_id": str(repo_id),

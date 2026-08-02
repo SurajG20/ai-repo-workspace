@@ -17,7 +17,7 @@ class Repository(Base, TimestampUpdateMixin, SoftDeleteMixin):
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
     owner_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    provider: Mapped[ProviderType] = mapped_column(default=ProviderType.GITHUB)
+    provider: Mapped[ProviderType] = mapped_column(String(32), default=ProviderType.GITHUB)
     provider_id: Mapped[Optional[str]] = mapped_column(String(64))
     full_name: Mapped[str] = mapped_column(String(512), nullable=False)
     clone_url: Mapped[Optional[str]] = mapped_column(Text)
@@ -27,7 +27,7 @@ class Repository(Base, TimestampUpdateMixin, SoftDeleteMixin):
     description: Mapped[Optional[str]] = mapped_column(Text)
     is_private: Mapped[bool] = mapped_column(Boolean, default=False)
     size_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
-    status: Mapped[RepositoryStatus] = mapped_column(default=RepositoryStatus.PENDING)
+    status: Mapped[RepositoryStatus] = mapped_column(String(32), default=RepositoryStatus.PENDING)
     last_synced_at: Mapped[Optional[datetime]] = mapped_column()
     last_synced_sha: Mapped[Optional[str]] = mapped_column(String(40))
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)

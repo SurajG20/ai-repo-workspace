@@ -21,8 +21,10 @@ dependencies = [
     "structlog>=24.1.0",
     "cryptography>=42.0.0",
     "gitpython>=3.1.43",
-    "retrieval>=0.1.0",
-    "prompts>=0.1.0",
+    "neo4j>=5.22.0",
+    "qdrant-client>=1.10.0",
+    "openai>=1.30.0",
+    "anthropic>=0.34.0",
 ]
 
 [project.optional-dependencies]

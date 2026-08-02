@@ -138,6 +138,7 @@ def parse_repository(
         "errors_count": len(errors),
         "repository_id": repository_id,
         "snapshot_id": snapshot_id,
+        "language": _detect_language(all_files),
     }
 
     total_items = symbol_count + rel_count
@@ -184,3 +185,23 @@ def _collect_files(repo_path: str, file_paths: list[str] | None) -> list[str]:
 
 def _relative_path(file_path: str, repo_root: str) -> str:
     return os.path.relpath(file_path, repo_root).replace("\\", "/")
+
+
+_LANGUAGE_BY_EXT = {
+    ".ts": "typescript", ".tsx": "typescript", ".js": "javascript",
+    ".jsx": "javascript", ".mjs": "javascript", ".cjs": "javascript",
+    ".py": "python", ".pyi": "python",
+    ".go": "go", ".rs": "rust", ".java": "java",
+}
+
+
+def _detect_language(files: list[str]) -> str:
+    counts: dict[str, int] = {}
+    for f in files:
+        ext = os.path.splitext(f)[1].lower()
+        lang = _LANGUAGE_BY_EXT.get(ext)
+        if lang:
+            counts[lang] = counts.get(lang, 0) + 1
+    if not counts:
+        return ""
+    return max(counts, key=counts.get)

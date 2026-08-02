@@ -80,9 +80,13 @@ def setup() -> None:
             if not parser_c.exists():
                 run(["tree-sitter", "generate"], cwd=src_path)
 
+            sources = [str(parser_c)]
+            scanner_c = src_path / "scanner.c"
+            if scanner_c.exists():
+                sources.append(str(scanner_c))
+
             run(["gcc", "-shared", "-o", str(out_path), "-fPIC",
-                 "-I", str(src_path),
-                 str(parser_c)])
+                 "-I", str(src_path), *sources])
 
     print("\n=== Done ===")
     for f in sorted(GRAMMARS_DIR.glob("*.so")):

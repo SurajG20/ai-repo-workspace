@@ -37,7 +37,7 @@ def clone_repository(self, clone_url: str, local_path: str, access_token: str = 
 def create_snapshot(self, local_path: str, repository_id: str) -> dict:
     logger.info("creating_snapshot", repo_id=repository_id)
     try:
-        repo = git.Repo(local_path)
+        repo = git.Repo(local_path, search_parent_directories=True)
         head_sha = repo.head.commit.hexsha
         try:
             branch = repo.active_branch.name

@@ -45,8 +45,8 @@ class RepositoryResponse(BaseModel):
         return cls(
             id=str(repo.id),
             full_name=repo.full_name,
-            provider=repo.provider.value,
-            status=repo.status.value,
+            provider=repo.provider.value if hasattr(repo.provider, "value") else repo.provider,
+            status=repo.status.value if hasattr(repo.status, "value") else repo.status,
             language=repo.language,
             description=repo.description,
             is_private=repo.is_private,
@@ -56,6 +56,96 @@ class RepositoryResponse(BaseModel):
             last_synced_sha=repo.last_synced_sha,
             created_at=repo.created_at.isoformat() if repo.created_at else "",
         )
+
+
+@router.get("/stats/overview")
+async def overview_stats(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+) -> dict:
+    from sqlalchemy import func, select as sa_select
+
+    from ..models.job import IndexingJob
+    from ..models.repository import Repository
+    from ..models.snapshot import RepositorySnapshot
+
+    service = RepositoryService(session)
+    repos = await service.list_by_owner(user.id, limit=200, offset=0)
+
+    def _s(v) -> str:
+        return v.value if hasattr(v, "value") else str(v)
+
+    total = len(repos)
+    active = sum(1 for r in repos if _s(r.status) in ("active", "indexing"))
+    status_counts: dict[str, int] = {}
+    languages: dict[str, int] = {}
+    for r in repos:
+        status_counts[_s(r.status)] = status_counts.get(_s(r.status), 0) + 1
+        if r.language:
+            languages[r.language] = languages.get(r.language, 0) + 1
+
+    files_total = 0
+    snapshot_counts = 0
+    if repos:
+        result = await session.execute(
+            sa_select(func.sum(RepositorySnapshot.file_count)).where(
+                RepositorySnapshot.repository_id.in_([r.id for r in repos])
+            )
+        )
+        files_total = int(result.scalar() or 0)
+        result = await session.execute(
+            sa_select(func.count(RepositorySnapshot.id)).where(
+                RepositorySnapshot.repository_id.in_([r.id for r in repos])
+            )
+        )
+        snapshot_counts = int(result.scalar() or 0)
+
+    job_counts = {"queued": 0, "running": 0, "completed": 0, "failed": 0}
+    if repos:
+        result = await session.execute(
+            sa_select(IndexingJob.status, func.count(IndexingJob.id)).where(
+                IndexingJob.repository_id.in_([r.id for r in repos])
+            ).group_by(IndexingJob.status)
+        )
+        for status, count in result.all():
+            job_counts[str(status)] = count
+
+    symbols_by_kind: dict[str, int] = {}
+    symbols_total = 0
+    from graph_engine import Neo4jClient
+
+    client = Neo4jClient()
+    try:
+        for r in repos:
+            try:
+                stats = await client.execute_read(
+                    """
+                    MATCH (s:Symbol {repository_id: $repo_id})
+                    RETURN s.kind AS kind, count(s) AS count
+                    """,
+                    {"repo_id": str(r.id)},
+                )
+                for row in stats:
+                    kind = row["kind"]
+                    count = int(row["count"])
+                    symbols_by_kind[kind] = symbols_by_kind.get(kind, 0) + count
+                    symbols_total += count
+            except Exception:
+                continue
+    finally:
+        await client.close()
+
+    return {
+        "repositories_total": total,
+        "repositories_active": active,
+        "repositories_by_status": status_counts,
+        "languages": languages,
+        "files_total": files_total,
+        "snapshots_total": snapshot_counts,
+        "symbols_total": symbols_total,
+        "symbols_by_kind": symbols_by_kind,
+        "jobs": job_counts,
+    }
 
 
 @router.get("", response_model=list[RepositoryResponse])
