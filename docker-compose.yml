@@ -30,8 +30,7 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      - ./apps/frontend:/app/apps/frontend
-      - /app/apps/frontend/node_modules
+      - ./apps/frontend:/app
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
