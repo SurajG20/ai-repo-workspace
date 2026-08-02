@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import os
 from typing import Any
 
 import structlog
@@ -33,14 +35,27 @@ def sync_to_neo4j(
     self,
     repository_id: str,
     language: str,
-    symbols: list[dict],
-    relationships: list[dict],
+    symbols: list[dict] | None = None,
+    relationships: list[dict] | None = None,
+    data_file: str | None = None,
 ) -> dict[str, Any]:
+    if data_file:
+        logger.info("loading_parse_data_from_file", file=data_file)
+        with open(data_file) as f:
+            data = json.load(f)
+        symbols = data.get("symbols", [])
+        relationships = data.get("relationships", [])
+        repository_id = data.get("repository_id", repository_id)
+        try:
+            os.unlink(data_file)
+        except OSError:
+            pass
+
     import asyncio
 
     return asyncio.run(
         _sync_to_neo4j_async(
-            self, repository_id, language, symbols, relationships
+            self, repository_id, language, symbols or [], relationships or []
         )
     )
 
@@ -58,26 +73,30 @@ async def _sync_to_neo4j_async(
         engine = GraphSyncEngine()
         client = engine._client
 
-        graph_symbols = [
-            GraphSymbol(
-                symbol_id=s["id"],
-                name=s["name"],
-                kind=s["symbol_kind"],
-                file_path=s["file_path"],
-                language=language,
-                repository_id=repository_id,
-                signature=s.get("signature"),
-                start_line=s.get("start_line", 0),
-                end_line=s.get("end_line", 0),
-                start_col=s.get("start_col", 0),
-                end_col=s.get("end_col", 0),
-                parent_name=s.get("parent_name"),
-                is_exported=s.get("metadata", {}).get("is_exported", False)
-                if s.get("metadata")
-                else False,
+        symbol_id_map: dict[str, str] = {}
+        graph_symbols = []
+        for s in symbols:
+            sid = _build_symbol_id(repository_id, s["file_path"], s["name"])
+            symbol_id_map[s["id"]] = sid
+            graph_symbols.append(
+                GraphSymbol(
+                    symbol_id=sid,
+                    name=s["name"],
+                    kind=s["symbol_kind"],
+                    file_path=s["file_path"],
+                    language=language,
+                    repository_id=repository_id,
+                    signature=s.get("signature"),
+                    start_line=s.get("start_line", 0),
+                    end_line=s.get("end_line", 0),
+                    start_col=s.get("start_col", 0),
+                    end_col=s.get("end_col", 0),
+                    parent_name=s.get("parent_name"),
+                    is_exported=s.get("metadata", {}).get("is_exported", False)
+                    if s.get("metadata")
+                    else False,
+                )
             )
-            for s in symbols
-        ]
 
         graph_relationships = []
         module_imports = []
@@ -96,15 +115,21 @@ async def _sync_to_neo4j_async(
                     })
                 continue
 
-            src_id = _build_symbol_id(
-                repository_id,
-                r.get("source_file", ""),
-                r["source_symbol"],
+            src_id = symbol_id_map.get(
+                r.get("source_symbol_id", ""),
+                _build_symbol_id(
+                    repository_id,
+                    r.get("source_file", ""),
+                    r["source_symbol"],
+                ),
             )
-            tgt_id = _build_symbol_id(
-                repository_id,
-                r.get("target_file") or r.get("resolved_file") or r.get("source_file", ""),
-                r["target_symbol"],
+            tgt_id = symbol_id_map.get(
+                r.get("target_symbol_id", ""),
+                _build_symbol_id(
+                    repository_id,
+                    r.get("target_file") or r.get("resolved_file") or r.get("source_file", ""),
+                    r["target_symbol"],
+                ),
             )
 
             graph_relationships.append(

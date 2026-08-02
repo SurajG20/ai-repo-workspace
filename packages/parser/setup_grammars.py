@@ -76,10 +76,13 @@ def setup() -> None:
                 print(f"  {out_name}.so already built, skipping")
                 continue
 
-            run(["tree-sitter", "generate", "--no-bindings"], cwd=src_path)
+            parser_c = src_path / "parser.c"
+            if not parser_c.exists():
+                run(["tree-sitter", "generate"], cwd=src_path)
+
             run(["gcc", "-shared", "-o", str(out_path), "-fPIC",
                  "-I", str(src_path),
-                 str(src_path / "parser.c")])
+                 str(parser_c)])
 
     print("\n=== Done ===")
     for f in sorted(GRAMMARS_DIR.glob("*.so")):

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 from cryptography.fernet import Fernet
@@ -12,9 +14,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 
 def _get_fernet() -> Fernet:
-    key = settings.api_secret_key.encode("utf-8")
-    padded = key.ljust(32, b"\0")[:32]
-    return Fernet(Fernet.generate_key()._replace(data=bytearray(padded)))
+    key = hashlib.sha256(settings.api_secret_key.encode("utf-8")).digest()
+    return Fernet(base64.urlsafe_b64encode(key))
 
 
 def create_access_token(user_id: str) -> str:
@@ -33,13 +34,13 @@ def decode_access_token(token: str) -> str | None:
 
 
 def encrypt_token(token: str) -> bytes:
-    f = Fernet(settings.api_secret_key.encode("utf-8").ljust(32, b"\0")[:32])
+    f = _get_fernet()
     return f.encrypt(token.encode("utf-8"))
 
 
 def decrypt_token(encrypted: bytes) -> str | None:
     try:
-        f = Fernet(settings.api_secret_key.encode("utf-8").ljust(32, b"\0")[:32])
+        f = _get_fernet()
         return f.decrypt(encrypted).decode("utf-8")
     except Exception:
         return None

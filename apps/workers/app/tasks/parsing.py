@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import os
+import tempfile
 import uuid
 from typing import Any
 
@@ -17,6 +19,10 @@ from parser import (
 from ..main import app
 
 logger = structlog.get_logger(__name__)
+
+
+def _build_symbol_id(repository_id: str, file_path: str, symbol_name: str) -> str:
+    return ":".join([repository_id, file_path, symbol_name])
 
 
 @app.task(name="parse_repository", bind=True, max_retries=2)
@@ -62,8 +68,9 @@ def parse_repository(
             relationships = dep_extractor.extract(tree, source, rel_path, symbols)
 
             for sym in symbols:
+                sym_id = _build_symbol_id(repository_id, sym.file_path, sym.name)
                 symbols_data.append({
-                    "id": str(uuid.uuid4()),
+                    "id": sym_id,
                     "file_path": sym.file_path,
                     "name": sym.name,
                     "symbol_kind": sym.symbol_kind.value,
@@ -87,7 +94,13 @@ def parse_repository(
                     "id": str(uuid.uuid4()),
                     "source_file": rel.source_file,
                     "source_symbol": rel.source_symbol,
+                    "source_symbol_id": _build_symbol_id(repository_id, rel.source_file, rel.source_symbol),
                     "target_symbol": rel.target_symbol,
+                    "target_symbol_id": _build_symbol_id(
+                        repository_id,
+                        rel.target_file or resolved or rel.source_file,
+                        rel.target_symbol,
+                    ),
                     "target_file": rel.target_file,
                     "resolved_file": resolved,
                     "relationship_type": rel.relationship_type,
@@ -107,25 +120,52 @@ def parse_repository(
         if total > 100 and i % 50 == 0:
             logger.info("parse_progress", done=i + 1, total=total)
 
+    symbol_count = len(symbols_data)
+    rel_count = len(rel_data)
+
     logger.info(
         "parse_repository_done",
         repo_id=repository_id,
-        symbols=len(symbols_data),
-        relationships=len(rel_data),
+        symbols=symbol_count,
+        relationships=rel_count,
         errors=len(errors),
     )
 
-    return {
+    result = {
         "status": "completed",
-        "symbols_count": len(symbols_data),
-        "relationships_count": len(rel_data),
+        "symbols_count": symbol_count,
+        "relationships_count": rel_count,
         "errors_count": len(errors),
-        "symbols": symbols_data,
-        "relationships": rel_data,
-        "errors": errors,
         "repository_id": repository_id,
         "snapshot_id": snapshot_id,
     }
+
+    total_items = symbol_count + rel_count
+    if total_items > 5000:
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", prefix=f"parse_{repository_id}_", delete=False
+        )
+        json.dump({
+            "symbols": symbols_data,
+            "relationships": rel_data,
+            "errors": errors,
+            "repository_id": repository_id,
+            "snapshot_id": snapshot_id,
+        }, tmp, default=str)
+        tmp.flush()
+        result["data_file"] = tmp.name
+        logger.warning(
+            "parse_large_result_written_to_file",
+            repo_id=repository_id,
+            items=total_items,
+            file=tmp.name,
+        )
+    else:
+        result["symbols"] = symbols_data
+        result["relationships"] = rel_data
+        result["errors"] = errors
+
+    return result
 
 
 def _collect_files(repo_path: str, file_paths: list[str] | None) -> list[str]:

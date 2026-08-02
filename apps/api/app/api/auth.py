@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -77,7 +78,6 @@ async def github_callback(
         user.name = user_info.get("name")
         user.avatar_url = user_info.get("avatar_url")
         user.email = user_info.get("email")
-        from datetime import datetime, timezone
         user.last_login_at = datetime.now(timezone.utc)
     else:
         user = User(

@@ -7,8 +7,10 @@ ENV PYTHONPATH=/app/packages/shared/src:/app/packages/parser/src
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl git \
+    curl git build-essential nodejs npm \
     && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g tree-sitter-cli
 
 FROM base AS development
 
@@ -17,6 +19,9 @@ RUN pip install -e /app/packages/shared
 
 COPY apps/api/ /app/apps/api/
 COPY packages/ /app/packages/
+
+WORKDIR /app/packages/parser
+RUN python setup_grammars.py
 
 WORKDIR /app/apps/api
 RUN pip install -e .
@@ -32,6 +37,9 @@ RUN pip install -e /app/packages/shared
 
 COPY apps/api/ /app/apps/api/
 COPY packages/ /app/packages/
+
+WORKDIR /app/packages/parser
+RUN python setup_grammars.py
 
 WORKDIR /app/apps/api
 RUN pip install --no-cache-dir -e .

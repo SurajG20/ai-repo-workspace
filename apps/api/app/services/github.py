@@ -95,6 +95,7 @@ class GitHubOAuthService:
     async def register_webhook(
         self, access_token: str, owner: str, repo: str, webhook_url: str
     ) -> Optional[int]:
+        webhook_secret = settings.github_webhook_secret or settings.api_secret_key[:32]
         try:
             resp = await self.http.post(
                 f"https://api.github.com/repos/{owner}/{repo}/hooks",
@@ -105,7 +106,7 @@ class GitHubOAuthService:
                     "config": {
                         "url": webhook_url,
                         "content_type": "json",
-                        "secret": settings.api_secret_key[:32],
+                        "secret": webhook_secret,
                     },
                 },
                 headers={

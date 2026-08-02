@@ -39,7 +39,10 @@ def create_snapshot(self, local_path: str, repository_id: str) -> dict:
     try:
         repo = git.Repo(local_path)
         head_sha = repo.head.commit.hexsha
-        branch = repo.active_branch.name
+        try:
+            branch = repo.active_branch.name
+        except (TypeError, ValueError):
+            branch = repo.head.commit.hexsha[:12]
 
         file_count = 0
         total_size = 0

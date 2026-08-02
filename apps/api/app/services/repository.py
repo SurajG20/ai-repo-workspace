@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from pathlib import Path
 from typing import Optional
 
 import structlog
@@ -67,11 +68,18 @@ class RepositoryService:
         local_path: str,
         name: str | None = None,
     ) -> Repository:
-        repo_id = uuid.uuid4()
-        path = local_path
-        name = name or os.path.basename(path.rstrip("/").rstrip("\\"))
+        resolved = Path(local_path).resolve()
+        if not resolved.exists():
+            raise ValueError(f"Path does not exist: {local_path}")
+        if not resolved.is_dir():
+            raise ValueError(f"Path is not a directory: {local_path}")
+        if resolved.parent != resolved and not resolved.exists():
+            raise ValueError(f"Path does not exist: {local_path}")
+
+        path = str(resolved)
+        name = name or resolved.name
         repo = Repository(
-            id=repo_id,
+            id=uuid.uuid4(),
             owner_id=owner_id,
             provider=ProviderType.LOCAL,
             full_name=name,
@@ -93,11 +101,15 @@ class RepositoryService:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_by_owner(self, owner_id: uuid.UUID) -> list[Repository]:
+    async def list_by_owner(
+        self, owner_id: uuid.UUID, limit: int = 50, offset: int = 0
+    ) -> list[Repository]:
         stmt = (
             select(Repository)
             .where(Repository.owner_id == owner_id, Repository.deleted_at.is_(None))
             .order_by(Repository.updated_at.desc())
+            .offset(offset)
+            .limit(limit)
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -109,8 +121,9 @@ class RepositoryService:
         await self.session.flush()
 
     async def trigger_sync(self, repo: Repository) -> IndexingJob:
-        await self._enqueue_snapshot_job(repo)
-        return await self._enqueue_clone_job(repo)
+        if repo.clone_url:
+            return await self._enqueue_clone_job(repo)
+        return await self._enqueue_snapshot_job(repo)
 
     async def _enqueue_clone_job(self, repo: Repository) -> IndexingJob:
         job = IndexingJob(

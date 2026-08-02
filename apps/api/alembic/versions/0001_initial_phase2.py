@@ -20,7 +20,7 @@ REPO_STATUSES = ("pending", "cloning", "active", "indexing", "error", "archived"
 
 
 def upgrade() -> None:
-    op.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+    op.execute("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\"")
 
     _safe_create_enum("provider_type", PROVIDER_TYPES)
     _safe_create_enum("repo_status", REPO_STATUSES)
@@ -67,7 +67,7 @@ def _safe_create_enum(name: str, values: tuple[str, ...]) -> None:
 def _create_users() -> None:
     op.create_table(
         "users",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("provider", sa.String(32), nullable=False, server_default="github"),
         sa.Column("provider_id", sa.String(64), nullable=False),
         sa.Column("login", sa.String(255), nullable=False),
@@ -90,7 +90,7 @@ def _create_users() -> None:
 def _create_repositories() -> None:
     op.create_table(
         "repositories",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("owner_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("provider", sa.String(32), nullable=False, server_default="github"),
         sa.Column("provider_id", sa.String(64)),
@@ -119,7 +119,7 @@ def _create_repositories() -> None:
 def _create_repository_languages() -> None:
     op.create_table(
         "repository_languages",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("repository_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repositories.id"), nullable=False),
         sa.Column("language", sa.String(64), nullable=False),
         sa.Column("percentage", sa.Float, server_default=sa.text("0.0")),
@@ -130,7 +130,7 @@ def _create_repository_languages() -> None:
 def _create_repository_snapshots() -> None:
     op.create_table(
         "repository_snapshots",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("repository_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repositories.id"), nullable=False),
         sa.Column("commit_sha", sa.String(40), nullable=False),
         sa.Column("branch", sa.String(255), server_default="main"),
@@ -154,7 +154,7 @@ def _create_repository_snapshots() -> None:
 def _create_repository_files() -> None:
     op.create_table(
         "repository_files",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("repository_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repositories.id"), nullable=False),
         sa.Column("path", sa.Text, nullable=False),
         sa.Column("file_type", sa.String(32), server_default="unknown"),
@@ -177,7 +177,7 @@ def _create_repository_files() -> None:
 def _create_indexing_workflows() -> None:
     op.create_table(
         "indexing_workflows",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("repository_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repositories.id"), nullable=False),
         sa.Column("workflow_type", sa.String(32), nullable=False),
         sa.Column("status", sa.String(32), server_default="queued"),
@@ -193,7 +193,7 @@ def _create_indexing_workflows() -> None:
 def _create_indexing_jobs() -> None:
     op.create_table(
         "indexing_jobs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("repository_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repositories.id"), nullable=False),
         sa.Column("snapshot_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repository_snapshots.id")),
         sa.Column("workflow_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("indexing_workflows.id")),
@@ -226,7 +226,7 @@ def _create_indexing_jobs() -> None:
 def _create_indexing_errors() -> None:
     op.create_table(
         "indexing_errors",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("job_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("indexing_jobs.id"), nullable=False),
         sa.Column("file_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repository_files.id")),
         sa.Column("error_type", sa.String(64), nullable=False),
@@ -239,7 +239,7 @@ def _create_indexing_errors() -> None:
 def _create_worker_heartbeats() -> None:
     op.create_table(
         "worker_heartbeats",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("worker_id", sa.String(128), nullable=False),
         sa.Column("current_job_id", postgresql.UUID(as_uuid=True)),
         sa.Column("status", sa.String(32), server_default="idle"),
@@ -251,7 +251,7 @@ def _create_worker_heartbeats() -> None:
 def _create_webhook_events() -> None:
     op.create_table(
         "webhook_events",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("uuid_generate_v4()")),
+        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
         sa.Column("repository_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("repositories.id"), nullable=False),
         sa.Column("provider", sa.String(32), nullable=False),
         sa.Column("event_type", sa.String(32), nullable=False),

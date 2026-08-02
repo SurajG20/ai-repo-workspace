@@ -204,8 +204,12 @@ class GraphSyncEngine:
         repository_id: str,
         language: str,
         module_imports: list[dict] | None = None,
+        clear_existing: bool = True,
     ) -> dict:
         await self.ensure_indexes()
+
+        if clear_existing:
+            await self.clear_repository(repository_id)
 
         sym_count = await self.upsert_symbols(symbols, repository_id, language)
         rel_count = await self.upsert_relationships(relationships, repository_id)

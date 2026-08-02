@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 from uuid import UUID
+from fastapi import HTTPException, Query
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
@@ -61,9 +62,11 @@ class RepositoryResponse(BaseModel):
 async def list_repositories(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
 ) -> list[RepositoryResponse]:
     service = RepositoryService(session)
-    repos = await service.list_by_owner(user.id)
+    repos = await service.list_by_owner(user.id, limit=limit, offset=offset)
     return [RepositoryResponse.from_model(r) for r in repos]
 
 
@@ -89,7 +92,10 @@ async def create_repository(
     service = RepositoryService(session)
 
     if body.local_path:
-        repo = await service.create_from_local(user.id, body.local_path, body.name)
+        try:
+            repo = await service.create_from_local(user.id, body.local_path, body.name)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
         await session.commit()
         return RepositoryResponse.from_model(repo)
 

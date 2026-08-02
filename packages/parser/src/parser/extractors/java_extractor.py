@@ -98,10 +98,11 @@ class JavaExtractor(BaseSymbolExtractor):
             self._walk(child, source, file_path, parent_name, symbols)
 
     def _extract_visibility(self, node, source: bytes) -> str:
-        for modifier in ("public", "private", "protected"):
-            modifier_len = len(modifier) + 20
-            if modifier in self._node_text(node, source)[:modifier_len]:
-                return modifier
+        for child in node.children:
+            if child.type == "modifier":
+                text = self._node_text(child, source)
+                if text in ("public", "private", "protected"):
+                    return text
         return "package"
 
     def _extract_signature(self, node, source: bytes) -> str | None:

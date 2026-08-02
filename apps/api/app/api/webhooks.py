@@ -19,10 +19,13 @@ async def github_webhook(
     event_type = request.headers.get("X-GitHub-Event", "push")
     delivery_id = request.headers.get("X-GitHub-Delivery")
     signature = request.headers.get("X-Hub-Signature-256")
+    raw_body = await request.body()
     payload = await request.json()
 
     service = WebhookService(session)
-    await service.handle_github_event(event_type, delivery_id, payload, signature)
+    await service.handle_github_event(
+        event_type, delivery_id, payload, signature, raw_body=raw_body
+    )
     await session.commit()
 
     logger.info("webhook_processed", event=event_type, delivery=delivery_id)

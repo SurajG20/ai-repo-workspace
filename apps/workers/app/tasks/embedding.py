@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import asyncio
 from typing import Any
@@ -18,14 +19,26 @@ def embed_repository(
     self,
     repository_id: str,
     language: str,
-    symbols: list[dict],
+    symbols: list[dict] | None = None,
     provider: str | None = None,
+    data_file: str | None = None,
 ) -> dict[str, Any]:
+    if data_file:
+        logger.info("loading_parse_data_from_file", file=data_file)
+        with open(data_file) as f:
+            data = json.load(f)
+        symbols = data.get("symbols", [])
+        repository_id = data.get("repository_id", repository_id)
+        try:
+            os.unlink(data_file)
+        except OSError:
+            pass
+
     embedding_provider = provider or os.getenv("EMBEDDING_PROVIDER", "openai")
 
     return asyncio.run(
         _embed_repository_async(
-            self, repository_id, language, symbols, embedding_provider
+            self, repository_id, language, symbols or [], embedding_provider
         )
     )
 

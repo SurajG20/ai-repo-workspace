@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     github_client_id: str = ""
     github_client_secret: str = ""
     github_redirect_uri: str = "http://localhost:8000/auth/github/callback"
+    github_webhook_secret: str = ""
 
     openai_api_key: str = ""
     anthropic_api_key: str = ""
@@ -49,9 +50,7 @@ class Settings(BaseSettings):
     celery_broker_url: str = "redis://localhost:6379/1"
     celery_result_backend: str = "redis://localhost:6379/2"
 
-    @property
-    def cors_origins(self) -> list[str]:
-        return ["http://localhost:3001", "http://127.0.0.1:3001"]
+    cors_origins: list[str] = ["http://localhost:3001", "http://127.0.0.1:3001"]
 
     @property
     def database_url(self) -> str:
