@@ -2,7 +2,7 @@ FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app/packages/shared/src:/app/packages/parser/src:/app/packages/graph-engine/src:/app/packages/embeddings/src:/app/packages/retrieval/src:/app/packages/prompts/src
+ENV PYTHONPATH=/app/packages/shared/src:/app/packages/parser/src:/app/packages/graph-engine/src:/app/packages/embeddings/src:/app/packages/retrieval/src:/app/packages/prompts/src:/app/packages/jobs/src
 
 WORKDIR /app
 

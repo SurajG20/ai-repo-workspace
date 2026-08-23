@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import tempfile
@@ -7,13 +8,12 @@ import uuid
 from typing import Any
 
 import structlog
-
 from parser import (
-    TreeSitterParser,
     ModulePathResolver,
-    get_extractor,
-    get_dependency_extractor,
+    TreeSitterParser,
     detect_language,
+    get_dependency_extractor,
+    get_extractor,
 )
 
 from ..main import app
@@ -28,6 +28,19 @@ def _build_symbol_id(repository_id: str, file_path: str, symbol_name: str) -> st
 @app.task(name="parse_repository", bind=True, max_retries=2)
 def parse_repository(
     self,
+    repository_id: str,
+    snapshot_id: str,
+    repo_path: str,
+    file_paths: list[str] | None = None,
+) -> dict[str, Any]:
+    try:
+        return asyncio.run(parse_stage(repository_id, snapshot_id, repo_path, file_paths))
+    except Exception as e:
+        logger.error("parse_repository_failed", repo_id=repository_id, error=str(e))
+        raise self.retry(exc=e)
+
+
+async def parse_stage(
     repository_id: str,
     snapshot_id: str,
     repo_path: str,
