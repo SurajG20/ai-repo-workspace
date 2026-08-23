@@ -12,8 +12,6 @@ from graph_engine import (
     RelationshipType,
 )
 
-from ..main import app
-
 logger = structlog.get_logger(__name__)
 
 RELATIONSHIP_TYPE_MAP: dict[str, RelationshipType] = {
@@ -26,24 +24,6 @@ RELATIONSHIP_TYPE_MAP: dict[str, RelationshipType] = {
     "uses": RelationshipType.USES,
     "exports": RelationshipType.EXPORTS,
 }
-
-
-@app.task(name="sync_to_neo4j", bind=True, max_retries=2)
-def sync_to_neo4j(
-    self,
-    repository_id: str,
-    language: str,
-    symbols: list[dict] | None = None,
-    relationships: list[dict] | None = None,
-    data_file: str | None = None,
-) -> dict[str, Any]:
-    try:
-        return asyncio.run(
-            graph_sync_stage(repository_id, language, symbols, relationships, data_file)
-        )
-    except Exception as e:
-        logger.error("sync_to_neo4j_error", repo_id=repository_id, error=str(e))
-        raise self.retry(exc=e)
 
 
 async def graph_sync_stage(

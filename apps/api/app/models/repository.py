@@ -38,7 +38,6 @@ class Repository(Base, TimestampUpdateMixin, SoftDeleteMixin):
     files: Mapped[list["RepositoryFile"]] = relationship(back_populates="repository", cascade="all, delete-orphan")
     jobs: Mapped[list["IndexingJob"]] = relationship(back_populates="repository", cascade="all, delete-orphan")
     webhook_events: Mapped[list["WebhookEvent"]] = relationship(back_populates="repository", cascade="all, delete-orphan")
-    workflows: Mapped[list["IndexingWorkflow"]] = relationship(back_populates="repository", cascade="all, delete-orphan")
 
 
 class RepositoryLanguage(Base):

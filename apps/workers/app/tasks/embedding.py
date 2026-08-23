@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 from typing import Any
@@ -8,27 +7,7 @@ from typing import Any
 import structlog
 from embeddings import EmbeddingPipeline
 
-from ..main import app
-
 logger = structlog.get_logger(__name__)
-
-
-@app.task(name="embed_repository", bind=True, max_retries=2)
-def embed_repository(
-    self,
-    repository_id: str,
-    language: str,
-    symbols: list[dict] | None = None,
-    provider: str | None = None,
-    data_file: str | None = None,
-) -> dict[str, Any]:
-    try:
-        return asyncio.run(
-            embed_stage(repository_id, language, symbols, provider, data_file)
-        )
-    except Exception as e:
-        logger.error("embed_repository_error", repo_id=repository_id, error=str(e))
-        raise self.retry(exc=e)
 
 
 async def embed_stage(

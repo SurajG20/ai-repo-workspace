@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from .base import Base
-from .user import User
+from .file import RepositoryFile
+from .job import IndexingError, IndexingJob, WorkerHeartbeat
 from .repository import Repository, RepositoryLanguage
 from .snapshot import RepositorySnapshot
-from .file import RepositoryFile
-from .workflow import IndexingWorkflow
-from .job import IndexingJob, IndexingError, WorkerHeartbeat
+from .user import User
 from .webhook import WebhookEvent
 
 __all__ = [
@@ -16,7 +15,6 @@ __all__ = [
     "RepositoryLanguage",
     "RepositorySnapshot",
     "RepositoryFile",
-    "IndexingWorkflow",
     "IndexingJob",
     "IndexingError",
     "WorkerHeartbeat",

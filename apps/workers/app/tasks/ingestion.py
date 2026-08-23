@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import asyncio
 import os
 import shutil
 
 import git
 import structlog
-
-from ..main import app
 
 logger = structlog.get_logger(__name__)
 
@@ -27,15 +24,6 @@ async def clone_stage(clone_url: str, local_path: str, access_token: str = "") -
     head_sha = repo.head.commit.hexsha
     logger.info("clone_complete", sha=head_sha)
     return {"status": "completed", "sha": head_sha, "path": local_path}
-
-
-@app.task(name="clone_repository", bind=True, max_retries=3)
-def clone_repository(self, clone_url: str, local_path: str, access_token: str = "") -> dict:
-    try:
-        return asyncio.run(clone_stage(clone_url, local_path, access_token))
-    except Exception as e:
-        logger.error("clone_failed", error=str(e))
-        raise self.retry(exc=e)
 
 
 async def snapshot_stage(local_path: str, repository_id: str) -> dict:
@@ -66,12 +54,3 @@ async def snapshot_stage(local_path: str, repository_id: str) -> dict:
         "file_count": file_count,
         "total_size_bytes": total_size,
     }
-
-
-@app.task(name="create_snapshot", bind=True, max_retries=2)
-def create_snapshot(self, local_path: str, repository_id: str) -> dict:
-    try:
-        return asyncio.run(snapshot_stage(local_path, repository_id))
-    except Exception as e:
-        logger.error("snapshot_failed", error=str(e))
-        raise self.retry(exc=e)
