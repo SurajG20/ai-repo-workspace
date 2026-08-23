@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jobs import IndexingPipeline, PostgresJobStore
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,8 +13,13 @@ from app.models.user import User
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
+def get_pipeline(request: Request) -> IndexingPipeline:
+    """The Indexing Pipeline, backed by the app-lifespan asyncpg pool."""
+    return IndexingPipeline(PostgresJobStore(request.app.state.jobs_pool))
+
+
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_db),
 ) -> User:
     if not credentials:
@@ -35,9 +39,9 @@ async def get_current_user(
 
 
 async def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_db),
-) -> Optional[User]:
+) -> User | None:
     if not credentials:
         return None
     user_id = decode_access_token(credentials.credentials)

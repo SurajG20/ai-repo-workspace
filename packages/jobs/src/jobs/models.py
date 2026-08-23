@@ -22,6 +22,7 @@ class RepoContext:
     local_path: str | None
     clone_url: str | None
     language: str | None
+    owner_id: str | None = None
 
 
 @dataclass(slots=True)
@@ -60,6 +61,7 @@ class ClaimedJob:
                 "local_path": self.repo.local_path,
                 "clone_url": self.repo.clone_url,
                 "language": self.repo.language,
+                "owner_id": self.repo.owner_id,
             },
             "meta": self.meta,
         }
@@ -80,6 +82,7 @@ class ClaimedJob:
                 local_path=repo.get("local_path"),
                 clone_url=repo.get("clone_url"),
                 language=repo.get("language"),
+                owner_id=repo.get("owner_id"),
             ),
             meta=dict(payload.get("meta") or {}),
         )

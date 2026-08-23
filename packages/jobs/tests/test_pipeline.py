@@ -53,6 +53,15 @@ def test_claim_of_clone_sets_repo_cloning():
     assert store.repo_status(repo_id) == "cloning"
 
 
+def test_claim_carries_owner_for_credential_resolution():
+    pipeline, store, _, _ = make_pipeline()
+    rid = store.add_repository(owner_id="user-1")
+    run(pipeline.enqueue(rid, Stage.CLONE))
+    claimed = run(pipeline.claim_next("worker-1"))
+    assert claimed is not None
+    assert claimed.repo.owner_id == "user-1"
+
+
 def test_claims_are_exclusive_until_completed():
     pipeline, store, repo_id, _ = make_pipeline()
     run(pipeline.enqueue(repo_id, Stage.CLONE))

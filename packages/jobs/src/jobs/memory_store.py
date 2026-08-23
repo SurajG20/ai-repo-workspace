@@ -26,6 +26,7 @@ class _Repo:
     local_path: str | None
     clone_url: str | None
     language: str | None
+    owner_id: str | None = None
     status: str = "pending"
     deleted_at: datetime | None = None
     last_synced_sha: str | None = None
@@ -85,6 +86,7 @@ class MemoryJobStore(JobStore):
         local_path: str | None = "/repos/x",
         clone_url: str | None = "https://github.com/owner/name",
         language: str | None = "python",
+        owner_id: str | None = None,
         status: str = "active",
         deleted: bool = False,
     ) -> str:
@@ -95,6 +97,7 @@ class MemoryJobStore(JobStore):
             local_path=local_path,
             clone_url=clone_url,
             language=language,
+            owner_id=owner_id,
             status=status,
             deleted_at=self._now() if deleted else None,
         )
@@ -225,6 +228,7 @@ class MemoryJobStore(JobStore):
                 local_path=repo.local_path,
                 clone_url=repo.clone_url,
                 language=repo.language,
+                owner_id=repo.owner_id,
             ),
             meta=copy.deepcopy(row.metadata),
         )

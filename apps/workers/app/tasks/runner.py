@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import asyncio
 
+import asyncpg
 import structlog
 from jobs import ClaimedJob, IndexingPipeline, PostgresJobStore, Stage
 
 from ..db import get_pool
 from ..main import app
+from .credentials import resolve_user_github_token
 from .embedding import embed_stage
 from .ingestion import clone_stage, snapshot_stage
 from .parsing import parse_stage
@@ -23,23 +25,23 @@ from .sync_graph import graph_sync_stage
 logger = structlog.get_logger(__name__)
 
 
-async def _run_clone(claimed: ClaimedJob) -> dict:
+async def _run_clone(claimed: ClaimedJob, pool: asyncpg.Pool) -> dict:
+    token = await resolve_user_github_token(pool, claimed.repo.owner_id)
     return await clone_stage(
         clone_url=claimed.repo.clone_url or claimed.meta.get("clone_url") or "",
         local_path=claimed.repo.local_path or claimed.meta.get("local_path") or "",
-        # Token resolution from stored credentials lands with the api switch.
-        access_token="",
+        access_token=token,
     )
 
 
-async def _run_snapshot(claimed: ClaimedJob) -> dict:
+async def _run_snapshot(claimed: ClaimedJob, pool: asyncpg.Pool) -> dict:
     return await snapshot_stage(
         local_path=claimed.repo.local_path or "",
         repository_id=str(claimed.repository_id),
     )
 
 
-async def _run_parse(claimed: ClaimedJob) -> dict:
+async def _run_parse(claimed: ClaimedJob, pool: asyncpg.Pool) -> dict:
     return await parse_stage(
         repository_id=str(claimed.repository_id),
         snapshot_id=claimed.snapshot_id or "",
@@ -48,7 +50,7 @@ async def _run_parse(claimed: ClaimedJob) -> dict:
     )
 
 
-async def _run_graph_sync(claimed: ClaimedJob) -> dict:
+async def _run_graph_sync(claimed: ClaimedJob, pool: asyncpg.Pool) -> dict:
     return await graph_sync_stage(
         repository_id=str(claimed.repository_id),
         language=claimed.repo.language or claimed.meta.get("language", ""),
@@ -58,7 +60,7 @@ async def _run_graph_sync(claimed: ClaimedJob) -> dict:
     )
 
 
-async def _run_embed(claimed: ClaimedJob) -> dict:
+async def _run_embed(claimed: ClaimedJob, pool: asyncpg.Pool) -> dict:
     return await embed_stage(
         repository_id=str(claimed.repository_id),
         language=claimed.repo.language or claimed.meta.get("language", ""),
@@ -90,7 +92,7 @@ async def _execute(envelope: dict) -> None:
     async with get_pool() as pool:
         pipeline = IndexingPipeline(PostgresJobStore(pool))
         try:
-            result = await executor(claimed)
+            result = await executor(claimed, pool)
             children = await pipeline.complete(claimed, result)
             logger.info(
                 "job_completed",

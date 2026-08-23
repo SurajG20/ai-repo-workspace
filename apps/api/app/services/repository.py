@@ -2,26 +2,33 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import UTC
 from pathlib import Path
-from typing import Optional
 
 import structlog
+from jobs import IndexingPipeline, Job, Stage
+from shared.models.repository import ProviderType, RepositoryStatus
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.models.repository import JobType, ProviderType, RepositoryStatus
-
 from ..config import settings
-from ..models.job import IndexingJob
 from ..models.repository import Repository, RepositoryLanguage
-from ..models.snapshot import RepositorySnapshot
 
 logger = structlog.get_logger(__name__)
 
 
 class RepositoryService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, pipeline: IndexingPipeline | None = None) -> None:
         self.session = session
+        self.pipeline = pipeline
+
+    def _require_pipeline(self) -> IndexingPipeline:
+        if self.pipeline is None:
+            raise RuntimeError(
+                "RepositoryService requires a pipeline to enqueue jobs; "
+                "construct it with pipeline=Depends(get_pipeline)"
+            )
+        return self.pipeline
 
     def _repo_path(self, repo_id: str) -> str:
         return os.path.join(settings.repo_storage_path, repo_id)
@@ -31,6 +38,11 @@ class RepositoryService:
         owner_id: uuid.UUID,
         github_repo: dict,
     ) -> Repository:
+        """Persist a repository from GitHub metadata.
+
+        Does NOT enqueue indexing: callers must commit first, then call
+        enqueue_initial_indexing(repo).
+        """
         repo_id = uuid.uuid4()
         repo = Repository(
             id=repo_id,
@@ -57,9 +69,10 @@ class RepositoryService:
         await self.session.flush()
 
         if lang := github_repo.get("language"):
-            self.session.add(RepositoryLanguage(repository_id=repo.id, language=lang, percentage=100.0))
+            self.session.add(
+                RepositoryLanguage(repository_id=repo.id, language=lang, percentage=100.0)
+            )
 
-        await self._enqueue_clone_job(repo)
         return repo
 
     async def create_from_local(
@@ -89,10 +102,9 @@ class RepositoryService:
         self.session.add(repo)
         await self.session.flush()
 
-        await self._enqueue_snapshot_job(repo)
         return repo
 
-    async def get_by_id(self, repo_id: uuid.UUID, owner_id: uuid.UUID) -> Optional[Repository]:
+    async def get_by_id(self, repo_id: uuid.UUID, owner_id: uuid.UUID) -> Repository | None:
         stmt = select(Repository).where(
             Repository.id == repo_id,
             Repository.owner_id == owner_id,
@@ -115,31 +127,29 @@ class RepositoryService:
         return list(result.scalars().all())
 
     async def soft_delete(self, repo: Repository) -> None:
-        from datetime import datetime, timezone
-        repo.deleted_at = datetime.now(timezone.utc)
+        from datetime import datetime
+        repo.deleted_at = datetime.now(UTC)
         repo.status = RepositoryStatus.ARCHIVED
         await self.session.flush()
 
-    async def trigger_sync(self, repo: Repository) -> IndexingJob:
+    async def trigger_sync(self, repo: Repository) -> Job:
+        """Queue a fresh indexing pass for an already-committed repository."""
+        pipeline = self._require_pipeline()
         if repo.clone_url:
-            return await self._enqueue_clone_job(repo)
-        return await self._enqueue_snapshot_job(repo)
+            return await pipeline.enqueue(
+                str(repo.id),
+                Stage.CLONE,
+                metadata={
+                    "clone_url": repo.clone_url,
+                    "local_path": repo.local_path,
+                },
+            )
+        return await pipeline.enqueue(str(repo.id), Stage.SNAPSHOT)
 
-    async def _enqueue_clone_job(self, repo: Repository) -> IndexingJob:
-        job = IndexingJob(
-            repository_id=repo.id,
-            job_type=JobType.CLONE,
-            metadata_={"clone_url": repo.clone_url, "local_path": repo.local_path},
-        )
-        self.session.add(job)
-        await self.session.flush()
-        return job
+    async def enqueue_initial_indexing(self, repo: Repository) -> Job:
+        """Queue the first indexing pass.
 
-    async def _enqueue_snapshot_job(self, repo: Repository) -> IndexingJob:
-        job = IndexingJob(
-            repository_id=repo.id,
-            job_type=JobType.SNAPSHOT,
-        )
-        self.session.add(job)
-        await self.session.flush()
-        return job
+        Callers must commit the repository first: the pipeline validates
+        visibility of the repository row on its own connection.
+        """
+        return await self.trigger_sync(repo)

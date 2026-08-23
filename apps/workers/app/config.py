@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     celery_broker_url: str = "redis://localhost:6379/1"
     celery_result_backend: str = "redis://localhost:6379/2"
 
+    # Same secret the api uses to encrypt provider tokens; shared env var.
+    api_secret_key: str = "change-me-in-production"
+
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_user: str = "aiworkspace"

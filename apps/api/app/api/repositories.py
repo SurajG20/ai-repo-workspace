@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
-from fastapi import HTTPException, Query
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from jobs import IndexingPipeline
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
-from ..dependencies import get_current_user
-from ..models.repository import Repository, RepositoryStatus
+from ..dependencies import get_current_user, get_pipeline
+from ..models.repository import Repository
 from ..models.user import User
 from ..services.repository import RepositoryService
 
@@ -41,7 +40,7 @@ class RepositoryResponse(BaseModel):
     created_at: str
 
     @classmethod
-    def from_model(cls, repo: Repository) -> "RepositoryResponse":
+    def from_model(cls, repo: Repository) -> RepositoryResponse:
         return cls(
             id=str(repo.id),
             full_name=repo.full_name,
@@ -63,10 +62,10 @@ async def overview_stats(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> dict:
-    from sqlalchemy import func, select as sa_select
+    from sqlalchemy import func
+    from sqlalchemy import select as sa_select
 
     from ..models.job import IndexingJob
-    from ..models.repository import Repository
     from ..models.snapshot import RepositorySnapshot
 
     service = RepositoryService(session)
@@ -178,8 +177,9 @@ async def create_repository(
     body: RepositoryCreateRequest,
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
+    pipeline: IndexingPipeline = Depends(get_pipeline),
 ) -> RepositoryResponse:
-    service = RepositoryService(session)
+    service = RepositoryService(session, pipeline)
 
     if body.local_path:
         try:
@@ -187,6 +187,7 @@ async def create_repository(
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         await session.commit()
+        await service.enqueue_initial_indexing(repo)
         return RepositoryResponse.from_model(repo)
 
     if body.github_url:
@@ -203,8 +204,9 @@ async def sync_repository(
     repo_id: UUID,
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
+    pipeline: IndexingPipeline = Depends(get_pipeline),
 ) -> dict[str, str]:
-    service = RepositoryService(session)
+    service = RepositoryService(session, pipeline)
     repo = await service.get_by_id(repo_id, user.id)
     if not repo:
         raise HTTPException(status_code=404, detail="Repository not found")

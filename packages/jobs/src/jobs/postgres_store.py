@@ -75,7 +75,7 @@ WITH picked AS (
 )
 SELECT c.id, c.repository_id, c.snapshot_id, c.parent_job_id,
        c.job_type, c.metadata, c.retry_count,
-       r.full_name, r.local_path, r.clone_url, r.language
+       r.full_name, r.local_path, r.clone_url, r.language, r.owner_id
   FROM claimed c
   JOIN repositories r ON r.id = c.repository_id
 """
@@ -170,6 +170,7 @@ class PostgresJobStore(JobStore):
                 local_path=row["local_path"],
                 clone_url=row["clone_url"],
                 language=row["language"],
+                owner_id=str(row["owner_id"]) if row["owner_id"] else None,
             ),
             meta=_as_dict(row["metadata"]),
         )
