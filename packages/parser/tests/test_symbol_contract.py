@@ -9,7 +9,7 @@ from parser import (
     to_indexed_symbol,
 )
 from shared.models.repository import SymbolKind
-from shared.models.symbol import IndexedSymbol
+from shared.models.symbol import IndexedSymbol, SymbolRelationship as SharedRelationship
 
 
 def make_symbol(name="handler", **kwargs) -> ParsedSymbol:
@@ -111,5 +111,5 @@ def test_to_indexed_relationship_falls_back_to_name_based_ids():
     assert record.target_symbol_id == "repo-1:src/b.ts:callee"
     assert record.resolved_file == "src/b.ts"
 
-    restored = SymbolRelationship.from_payload(record.to_payload())
+    restored = SharedRelationship.from_payload(record.to_payload())
     assert restored == record

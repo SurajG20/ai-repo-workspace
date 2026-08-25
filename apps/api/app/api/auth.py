@@ -111,3 +111,46 @@ async def get_me(user: User = Depends(get_current_user)) -> UserResponse:
         name=user.name,
         avatar_url=user.avatar_url,
     )
+
+
+class DevLoginRequest(BaseModel):
+    login: str = "developer"
+    name: str = "Developer"
+
+
+@router.post("/dev/login", response_model=TokenResponse)
+async def dev_login(
+    body: DevLoginRequest = DevLoginRequest(),
+    session: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    """Convenience endpoint for local/self-hosted environments without GitHub OAuth."""
+    stmt = select(User).where(User.login == body.login, User.deleted_at.is_(None))
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        user = User(
+            provider_id=f"local-{body.login}",
+            login=body.login,
+            name=body.name,
+            email=f"{body.login}@local.dev",
+            avatar_url="",
+        )
+        session.add(user)
+        await session.flush()
+        await session.commit()
+    else:
+        user.last_login_at = datetime.now(timezone.utc)
+        await session.flush()
+        await session.commit()
+
+    jwt_token = create_access_token(str(user.id))
+    return TokenResponse(
+        access_token=jwt_token,
+        user={
+            "id": str(user.id),
+            "login": user.login,
+            "name": user.name,
+            "avatar_url": user.avatar_url,
+        },
+    )

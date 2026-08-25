@@ -34,6 +34,24 @@ export function SiteHeader() {
     if (token.trim()) {
       setToken(token.trim());
       toast("API token saved.");
+      window.location.reload();
+    }
+  };
+
+  const autoDevLogin = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/auth/dev/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login: "developer", name: "Developer" }),
+      });
+      if (!res.ok) throw new Error("Dev login failed");
+      const data = await res.json();
+      setToken(data.access_token);
+      toast("Logged in as local developer.");
+      window.location.reload();
+    } catch {
+      toast("Failed to authenticate with dev login.");
     }
   };
 
@@ -42,7 +60,8 @@ export function SiteHeader() {
       <div className="flex w-full items-center gap-2 px-4 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 h-4!" />
-        <h1 className="font-data text-sm font-medium tracking-wide">{title}</h1>        <div className="ml-auto flex items-center gap-2">
+        <h1 className="font-data text-sm font-medium tracking-wide">{title}</h1>
+        <div className="ml-auto flex items-center gap-2">
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="ghost" size="sm" className="font-data text-xs">
@@ -54,12 +73,7 @@ export function SiteHeader() {
               <DialogHeader>
                 <DialogTitle>API token</DialogTitle>
                 <DialogDescription>
-                  Paste a bearer token for the local API. In development, generate
-                  one in the backend container via
-                  <code className="mx-1 rounded bg-muted px-1 font-data text-[11px]">
-                    create_access_token
-                  </code>
-                  .
+                  Paste a bearer token or click Quick Dev Login to authenticate with local developer credentials.
                 </DialogDescription>
               </DialogHeader>
               <Input
@@ -68,7 +82,10 @@ export function SiteHeader() {
                 placeholder="eyJhbGciOiJIUzI1NiIs..."
                 className="font-data"
               />
-              <DialogFooter>
+              <DialogFooter className="gap-2 sm:justify-between">
+                <Button variant="secondary" onClick={autoDevLogin} type="button">
+                  Quick Dev Login
+                </Button>
                 <Button onClick={save}>Save token</Button>
               </DialogFooter>
             </DialogContent>

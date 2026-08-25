@@ -53,7 +53,14 @@ class Settings(BaseSettings):
     celery_broker_url: str = "redis://localhost:6379/1"
     celery_result_backend: str = "redis://localhost:6379/2"
 
-    cors_origins: list[str] = ["http://localhost:3001", "http://127.0.0.1:3001"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:8080",
+    ]
 
     @property
     def database_url(self) -> str:

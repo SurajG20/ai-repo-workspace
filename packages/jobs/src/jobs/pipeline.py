@@ -61,10 +61,6 @@ class IndexingPipeline:
             await self._cleanup_artifact(claimed)
             return []
 
-        if claimed.stage in TERMINAL_STAGES:
-            self._cleanup_artifact(claimed)
-            return []
-
         children: list[Job] = []
         for stage in NEXT_STAGES[claimed.stage]:
             children.append(await self._chain(claimed, stage, result))

@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  python-tests:
+    name: Backend & Packages Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio structlog cryptography pydantic pydantic-settings httpx asyncpg jinja2 openai neo4j anthropic qdrant-client fastapi "sqlalchemy[asyncio]" redis alembic gitpython python-multipart python-jose[cryptography] ruff mypy
+          pip install --no-deps -e packages/shared -e packages/jobs -e packages/prompts -e packages/parser -e packages/graph-engine -e packages/embeddings -e packages/retrieval -e apps/api
+
+      - name: Run Ruff Linting
+        run: |
+          ruff check .
+
+      - name: Run Pytest Test Suite
+        run: |
+          pytest -v
+
+  frontend-build:
+    name: Frontend Build & Typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Next.js Build
+        run: npm run build

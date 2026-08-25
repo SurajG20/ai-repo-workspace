@@ -11,11 +11,11 @@ import uuid
 
 from shared.models.symbol import (
     IndexedSymbol,
-    SymbolRelationship,
+    SymbolRelationship as SharedSymbolRelationship,
     build_symbol_id,
 )
 
-from .models import ParsedSymbol, SymbolRelationship
+from .models import ParsedSymbol, SymbolRelationship as ParsedRelationship
 
 __all__ = [
     "build_symbol_id",
@@ -66,26 +66,30 @@ def to_indexed_symbol(
         is_exported=(
             parsed.is_exported
             if parsed.is_exported is not None
-            else (derive_is_exported(parsed, language) if language else False)
+            else (
+                derive_is_exported(parsed, language)
+                if language
+                else bool(parsed.metadata.get("exported") or parsed.metadata.get("public"))
+            )
         ),
         extras=dict(parsed.metadata),
     )
 
 
 def to_indexed_relationship(
-    parsed: SymbolRelationship,
+    parsed: ParsedRelationship,
     *,
     repository_id: str,
     snapshot_id: str | None,
     resolved_target_file: str | None = None,
-) -> SymbolRelationship:
-    return SymbolRelationship(
+) -> SharedSymbolRelationship:
+    return SharedSymbolRelationship(
         relationship_id=str(uuid.uuid4()),
         repository_id=repository_id,
         snapshot_id=snapshot_id,
-        source_symbol_id=parsed.source_symbol_id
+        source_symbol_id=getattr(parsed, "source_symbol_id", None)
         or build_symbol_id(repository_id, parsed.source_file, parsed.source_symbol),
-        target_symbol_id=parsed.target_symbol_id
+        target_symbol_id=getattr(parsed, "target_symbol_id", None)
         or build_symbol_id(
             repository_id,
             resolved_target_file or parsed.target_file or parsed.source_file,

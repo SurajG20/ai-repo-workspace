@@ -27,10 +27,20 @@ packages = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = [
+    "packages/shared/tests",
+    "packages/parser/tests",
+    "packages/jobs/tests",
+    "packages/prompts/tests",
+    "packages/embeddings/tests",
+    "packages/retrieval/tests",
+    "packages/graph-engine/tests",
+    "apps/api/tests",
+]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+norecursedirs = [".git", ".venv", "node_modules", "grammars", "build", "dist"]
 
 [tool.ruff]
 target-version = "py312"
