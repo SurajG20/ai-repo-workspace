@@ -1,16 +1,114 @@
 from __future__ import annotations
 
 import structlog
+from shared.models.symbol import IndexedSymbol, SymbolRelationship, build_symbol_id
 
 from .client import Neo4jClient
 from .models import GraphRelationship, GraphSymbol, RelationshipType
 
 logger = structlog.get_logger(__name__)
 
+_VERB_TO_RELATIONSHIP: dict[str, RelationshipType] = {
+    "calls": RelationshipType.CALLS,
+    "invokes": RelationshipType.CALLS,
+    "uses": RelationshipType.USES,
+    # A name reference is the weakest link we track; deliberately USES.
+    "references": RelationshipType.USES,
+    "instantiates": RelationshipType.INSTANTIATES,
+    "extends": RelationshipType.EXTENDS,
+    "implements": RelationshipType.IMPLEMENTS,
+    "exports": RelationshipType.EXPORTS,
+    "imports": RelationshipType.IMPORTS,
+}
+
 
 class GraphSyncEngine:
     def __init__(self, client: Neo4jClient | None = None) -> None:
         self._client = client or Neo4jClient()
+
+    async def sync_parsed(
+        self,
+        *,
+        repository_id: str,
+        language: str,
+        symbols: list[IndexedSymbol],
+        relationships: list[SymbolRelationship],
+        clear_existing: bool = True,
+    ) -> dict:
+        """One-shot adaptation of canonical parse records to the graph.
+
+        Converts IndexedSymbol/SymbolRelationship to graph nodes and
+        relationships (including module-level imports), syncs, and releases
+        the underlying client. Unknown relationship verbs are skipped with
+        a warning, never silently relabeled.
+        """
+        try:
+            graph_symbols = [
+                GraphSymbol(
+                    symbol_id=s.symbol_id,
+                    name=s.name,
+                    kind=s.kind,
+                    file_path=s.file_path,
+                    language=language,
+                    repository_id=repository_id,
+                    signature=s.signature,
+                    start_line=s.start_line,
+                    end_line=s.end_line,
+                    start_col=s.start_col,
+                    end_col=s.end_col,
+                    parent_name=s.parent_name,
+                    is_exported=s.is_exported,
+                )
+                for s in symbols
+            ]
+
+            graph_relationships: list[GraphRelationship] = []
+            module_imports: list[dict] = []
+            for r in relationships:
+                rel_type = _VERB_TO_RELATIONSHIP.get(r.relationship_type)
+                if rel_type is None:
+                    logger.warning(
+                        "unknown_relationship_verb",
+                        verb=r.relationship_type,
+                        source=r.source_symbol_id,
+                    )
+                    continue
+
+                if rel_type is RelationshipType.IMPORTS:
+                    resolved = r.resolved_file or r.target_file
+                    if resolved and resolved != r.source_file:
+                        module_imports.append(
+                            {"source": r.source_file, "target": resolved}
+                        )
+                    continue
+
+                target_file = (
+                    r.resolved_file or r.target_file or r.source_file
+                )
+                graph_relationships.append(
+                    GraphRelationship(
+                        source_id=r.source_symbol_id
+                        or build_symbol_id(repository_id, r.source_file, r.source_symbol),
+                        target_id=r.target_symbol_id
+                        or build_symbol_id(repository_id, target_file, r.target_symbol),
+                        relationship_type=rel_type,
+                        source_file=r.source_file,
+                        target_file=r.resolved_file or "",
+                        line_number=r.line_number,
+                    )
+                )
+
+            return await self.sync_all(
+                symbols=graph_symbols,
+                relationships=graph_relationships,
+                repository_id=repository_id,
+                language=language,
+                module_imports=module_imports,
+                clear_existing=clear_existing,
+            )
+        finally:
+            await self._client.close()
+
 
     async def ensure_indexes(self) -> None:
         queries = [

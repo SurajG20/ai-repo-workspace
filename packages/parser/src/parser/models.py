@@ -17,6 +17,7 @@ class ParsedSymbol:
     start_col: int = 0
     end_col: int = 0
     parent_name: str | None = None
+    is_exported: bool | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

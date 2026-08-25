@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-import uuid
 from typing import Any
 
 import structlog
@@ -13,13 +12,11 @@ from parser import (
     detect_language,
     get_dependency_extractor,
     get_extractor,
+    to_indexed_relationship,
+    to_indexed_symbol,
 )
 
 logger = structlog.get_logger(__name__)
-
-
-def _build_symbol_id(repository_id: str, file_path: str, symbol_name: str) -> str:
-    return ":".join([repository_id, file_path, symbol_name])
 
 
 async def parse_stage(
@@ -63,21 +60,13 @@ async def parse_stage(
             relationships = dep_extractor.extract(tree, source, rel_path, symbols)
 
             for sym in symbols:
-                sym_id = _build_symbol_id(repository_id, sym.file_path, sym.name)
-                symbols_data.append({
-                    "id": sym_id,
-                    "file_path": sym.file_path,
-                    "name": sym.name,
-                    "symbol_kind": sym.symbol_kind.value,
-                    "signature": sym.signature,
-                    "start_line": sym.start_line,
-                    "end_line": sym.end_line,
-                    "start_col": sym.start_col,
-                    "end_col": sym.end_col,
-                    "parent_name": sym.parent_name,
-                    "metadata": sym.metadata,
-                    "snapshot_id": snapshot_id,
-                })
+                indexed = to_indexed_symbol(
+                    sym,
+                    repository_id=repository_id,
+                    snapshot_id=snapshot_id or None,
+                    language=lang_config.name,
+                )
+                symbols_data.append(indexed.to_payload())
 
             for rel in relationships:
                 resolved = None
@@ -85,24 +74,13 @@ async def parse_stage(
                     resolved = resolver.resolve(
                         rel.source_file, rel.target_file, lang_config.name
                     )
-                rel_data.append({
-                    "id": str(uuid.uuid4()),
-                    "source_file": rel.source_file,
-                    "source_symbol": rel.source_symbol,
-                    "source_symbol_id": _build_symbol_id(repository_id, rel.source_file, rel.source_symbol),
-                    "target_symbol": rel.target_symbol,
-                    "target_symbol_id": _build_symbol_id(
-                        repository_id,
-                        rel.target_file or resolved or rel.source_file,
-                        rel.target_symbol,
-                    ),
-                    "target_file": rel.target_file,
-                    "resolved_file": resolved,
-                    "relationship_type": rel.relationship_type,
-                    "line_number": rel.line_number,
-                    "metadata": rel.metadata,
-                    "snapshot_id": snapshot_id,
-                })
+                indexed_rel = to_indexed_relationship(
+                    rel,
+                    repository_id=repository_id,
+                    snapshot_id=snapshot_id or None,
+                    resolved_target_file=resolved,
+                )
+                rel_data.append(indexed_rel.to_payload())
 
         except Exception as e:
             logger.warning("parse_file_error", file=rel_path, error=str(e))

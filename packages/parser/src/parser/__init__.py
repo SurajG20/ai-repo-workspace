@@ -2,6 +2,12 @@ from __future__ import annotations
 
 from .engine import TreeSitterParser
 from .models import ParsedSymbol, SymbolRelationship
+from .promotion import (
+    build_symbol_id,
+    derive_is_exported,
+    to_indexed_relationship,
+    to_indexed_symbol,
+)
 from .registry import LANGUAGES, detect_language
 from .resolver import ModulePathResolver
 from .extractors import (
@@ -63,6 +69,10 @@ __all__ = [
     "LANGUAGES",
     "detect_language",
     "ModulePathResolver",
+    "build_symbol_id",
+    "derive_is_exported",
+    "to_indexed_symbol",
+    "to_indexed_relationship",
     "get_extractor",
     "get_dependency_extractor",
 ]

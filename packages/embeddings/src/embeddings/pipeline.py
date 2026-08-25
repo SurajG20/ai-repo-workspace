@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import structlog
 from qdrant_client.models import PointStruct
+from shared.models.symbol import IndexedSymbol
 
 from .base import BaseEmbedder
 from .openai_embedder import OpenAIEmbedder
 from .ollama_embedder import OllamaEmbedder
 from .qdrant_store import QdrantStore
-from .chunker import chunk_from_parse_result
+from .chunker import chunk_from_symbol
 
 logger = structlog.get_logger(__name__)
 
@@ -29,7 +30,7 @@ class EmbeddingPipeline:
 
     async def embed_and_store(
         self,
-        symbols: list[dict],
+        symbols: list[IndexedSymbol],
         repository_id: str,
         language: str,
         collection_name: str | None = None,
@@ -47,19 +48,20 @@ class EmbeddingPipeline:
         texts: list[str] = []
         metas: list[dict] = []
         for sym in symbols:
-            text = chunk_from_parse_result(sym)
+            text = chunk_from_symbol(sym)
             texts.append(text)
             metas.append({
-                "symbol_id": sym.get("id", ""),
-                "name": sym.get("name", "unknown"),
-                "kind": sym.get("symbol_kind", "unknown"),
-                "file_path": sym.get("file_path", ""),
-                "signature": sym.get("signature", ""),
-                "start_line": sym.get("start_line", 0),
-                "end_line": sym.get("end_line", 0),
-                "parent_name": sym.get("parent_name", ""),
+                "symbol_id": sym.symbol_id,
+                "name": sym.name,
+                "kind": sym.kind,
+                "file_path": sym.file_path,
+                "signature": sym.signature or "",
+                "start_line": sym.start_line,
+                "end_line": sym.end_line,
+                "parent_name": sym.parent_name or "",
                 "language": language,
                 "repository_id": repository_id,
+                "is_exported": sym.is_exported,
             })
 
         batch_size = 50

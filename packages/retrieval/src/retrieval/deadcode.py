@@ -33,6 +33,10 @@ ENTRY_POINT_PATTERNS = (
 
 CONSIDERED_LINKS = ("CALLS", "EXTENDS", "IMPLEMENTS", "INSTANTIATES", "USES", "IMPORTS")
 
+# Kinds the extractors actually emit (shared SymbolKind values). Dead code
+# detection considers every non-exported symbol of these kinds.
+DEAD_CODE_KINDS = ("function", "class", "interface", "type", "enum", "variable")
+
 
 class DeadCodeDetector:
     """Finds symbols with no incoming relationships in the call graph.
@@ -47,13 +51,14 @@ class DeadCodeDetector:
     async def detect(self, repository_id: str, limit: int = 200) -> list[dict]:
         started = time.perf_counter()
         link_pattern = "|".join(CONSIDERED_LINKS)
+        kinds = "[" + ", ".join(f"'{k}'" for k in DEAD_CODE_KINDS) + "]"
         try:
             candidates = await self._client.execute_read(
                 f"""
                 MATCH (s:Symbol {{repository_id: $repo_id}})
                 WHERE NOT EXISTS((:Symbol)-[:{link_pattern}]->(s))
                   AND s.is_exported = false
-                  AND s.kind IN ['function', 'method', 'class', 'interface', 'variable']
+                  AND s.kind IN {kinds}
                 OPTIONAL MATCH (s)-[r]->(n:Symbol {{repository_id: $repo_id}})
                 RETURN s.symbol_id AS symbol_id, s.name AS name, s.kind AS kind,
                        s.file_path AS file_path, s.signature AS signature,

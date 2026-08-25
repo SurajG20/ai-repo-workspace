@@ -6,6 +6,7 @@ from typing import Any
 
 import structlog
 from embeddings import EmbeddingPipeline
+from shared.models.symbol import IndexedSymbol
 
 logger = structlog.get_logger(__name__)
 
@@ -34,13 +35,15 @@ async def embed_stage(
 async def _embed_repository_async(
     repository_id: str,
     language: str,
-    symbols: list[dict],
+    symbol_payloads: list[dict],
     provider: str,
 ) -> dict[str, Any]:
+    indexed_symbols = [IndexedSymbol.from_payload(s) for s in symbol_payloads]
+
     logger.info(
         "embed_repository_start",
         repo_id=repository_id,
-        symbols=len(symbols),
+        symbols=len(indexed_symbols),
         provider=provider,
     )
 
@@ -49,7 +52,7 @@ async def _embed_repository_async(
     pipeline._embedder = _get_embedder(provider)
 
     result = await pipeline.embed_and_store(
-        symbols=symbols,
+        symbols=indexed_symbols,
         repository_id=repository_id,
         language=language,
     )

@@ -5,7 +5,7 @@ from .openai_embedder import OpenAIEmbedder
 from .ollama_embedder import OllamaEmbedder
 from .qdrant_store import QdrantStore
 from .pipeline import EmbeddingPipeline
-from .chunker import chunk_symbol, chunk_from_parse_result, chunk_module
+from .chunker import chunk_module, chunk_from_symbol, chunk_symbol
 
 __all__ = [
     "BaseEmbedder",
@@ -14,6 +14,6 @@ __all__ = [
     "QdrantStore",
     "EmbeddingPipeline",
     "chunk_symbol",
-    "chunk_from_parse_result",
+    "chunk_from_symbol",
     "chunk_module",
 ]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import structlog
+from shared.models.symbol import IndexedSymbol
 
 logger = structlog.get_logger(__name__)
 
@@ -13,7 +14,6 @@ def chunk_symbol(
     parent_name: str | None = None,
 ) -> str:
     parts: list[str] = []
-
     scope = f":{parent_name}" if parent_name else ""
     header = f"[{kind.upper()}] {symbol_name}{scope}"
     parts.append(header)
@@ -26,13 +26,13 @@ def chunk_symbol(
     return "\n".join(parts)
 
 
-def chunk_from_parse_result(symbol: dict) -> str:
+def chunk_from_symbol(symbol: IndexedSymbol) -> str:
     return chunk_symbol(
-        symbol_name=symbol.get("name", "unknown"),
-        kind=symbol.get("symbol_kind", "unknown"),
-        signature=symbol.get("signature"),
-        file_path=symbol.get("file_path", ""),
-        parent_name=symbol.get("parent_name"),
+        symbol_name=symbol.name,
+        kind=symbol.kind,
+        signature=symbol.signature,
+        file_path=symbol.file_path,
+        parent_name=symbol.parent_name,
     )
 
 
