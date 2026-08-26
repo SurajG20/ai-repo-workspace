@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     api_secret_key: str = "change-me-in-production"
     api_debug: bool = False
 
+    rate_limit_enabled: bool = True
+    rate_limit_requests_per_minute: int = 300
+    rate_limit_use_redis: bool = True
+
     postgres_user: str = "aiworkspace"
     postgres_password: str = "aiworkspace"
     postgres_db: str = "aiworkspace"
