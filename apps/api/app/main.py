@@ -14,6 +14,7 @@ from .api.webhooks import router as webhooks_router
 from .config import settings
 from .core.database import engine
 from .core.health import router as health_router
+from .core.metrics import MetricsMiddleware, metrics_endpoint
 from .core.ratelimit import MemoryRateLimiter, RateLimitMiddleware, RedisRateLimiter
 
 
@@ -69,6 +70,9 @@ def create_app() -> FastAPI:
     app.include_router(repositories_router)
     app.include_router(intelligence_router)
     app.include_router(webhooks_router)
+
+    app.add_middleware(MetricsMiddleware)
+    app.add_route("/metrics", metrics_endpoint, name="metrics", include_in_schema=False)
 
     return app
 

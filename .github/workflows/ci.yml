@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio structlog cryptography pydantic pydantic-settings httpx asyncpg jinja2 openai neo4j anthropic qdrant-client fastapi "sqlalchemy[asyncio]" redis alembic gitpython python-multipart python-jose[cryptography] ruff mypy
+          pip install pytest pytest-asyncio structlog cryptography pydantic pydantic-settings httpx asyncpg jinja2 openai neo4j anthropic qdrant-client fastapi "sqlalchemy[asyncio]" redis alembic gitpython python-multipart python-jose[cryptography] prometheus-client ruff mypy
           pip install --no-deps -e packages/shared -e packages/jobs -e packages/prompts -e packages/parser -e packages/graph-engine -e packages/embeddings -e packages/retrieval -e apps/api
 
       - name: Run Ruff Linting
