@@ -16,6 +16,7 @@ from .extractors import (
     GoExtractor,
     RustExtractor,
     JavaExtractor,
+    CppExtractor,
 )
 from .dependencies import (
     TypeScriptDependencyExtractor,
@@ -23,6 +24,7 @@ from .dependencies import (
     GoDependencyExtractor,
     RustDependencyExtractor,
     JavaDependencyExtractor,
+    CppDependencyExtractor,
 )
 
 _EXTRACTORS = {
@@ -33,6 +35,8 @@ _EXTRACTORS = {
     "go": GoExtractor,
     "rust": RustExtractor,
     "java": JavaExtractor,
+    "c": CppExtractor,
+    "cpp": CppExtractor,
 }
 
 _DEPENDENCIES = {
@@ -43,6 +47,8 @@ _DEPENDENCIES = {
     "go": GoDependencyExtractor,
     "rust": RustDependencyExtractor,
     "java": JavaDependencyExtractor,
+    "c": CppDependencyExtractor,
+    "cpp": CppDependencyExtractor,
 }
 
 

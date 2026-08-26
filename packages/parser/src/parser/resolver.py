@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import posixpath
 from pathlib import Path
 
 import structlog
@@ -37,14 +38,24 @@ class ModulePathResolver:
             return self._resolve_rust(import_specifier)
         elif language == "java":
             return self._resolve_java(import_specifier)
+        elif language in ("c", "cpp"):
+            return self._resolve_include(source_dir, import_specifier)
+        return None
+
+    def _resolve_include(self, source_dir: str, specifier: str) -> str | None:
+        """Resolve a quoted #include to a file inside the repository."""
+        relative = self._rel_norm(source_dir, specifier)
+        if relative is not None and relative in self._file_set:
+            return relative
+        rooted = os.path.normpath(specifier).replace(os.sep, "/").lstrip("/")
+        if not rooted.startswith("..") and rooted in self._file_set:
+            return rooted
         return None
 
     def _resolve_ts(self, source_dir: str, specifier: str, max_depth: int = 10) -> str | None:
-        base_dir = str(self.repo_root)
-
         if specifier.startswith("."):
-            target = self._abs_path(source_dir, specifier)
-            if not target.startswith(base_dir) or max_depth <= 0:
+            target = self._rel_norm(source_dir, specifier)
+            if target is None or max_depth <= 0:
                 return None
 
             for ext in JS_EXTENSIONS:
@@ -59,7 +70,7 @@ class ModulePathResolver:
 
             return None
 
-        return self._resolve_node_modules(base_dir, source_dir, specifier, max_depth)
+        return self._resolve_node_modules(str(self.repo_root), source_dir, specifier, max_depth)
 
     def _resolve_node_modules(
         self, base_dir: str, source_dir: str, specifier: str, max_depth: int
@@ -175,3 +186,11 @@ class ModulePathResolver:
     @staticmethod
     def _abs_path(base: str, rel: str) -> str:
         return str((Path(base) / rel).resolve())
+
+    def _rel_norm(self, source_dir: str, specifier: str) -> str | None:
+        """Join and normalize a repo-relative path; None if it escapes the repo."""
+        joined = os.path.normpath(posixpath.join(source_dir, specifier))
+        joined = joined.replace(os.sep, "/").lstrip("/")
+        if joined.startswith(".."):
+            return None
+        return joined

@@ -5,6 +5,7 @@ from .python_dependency import PythonDependencyExtractor
 from .go_dependency import GoDependencyExtractor
 from .rust_dependency import RustDependencyExtractor
 from .java_dependency import JavaDependencyExtractor
+from .cpp_dependency import CppDependencyExtractor
 
 __all__ = [
     "TypeScriptDependencyExtractor",
@@ -12,4 +13,5 @@ __all__ = [
     "GoDependencyExtractor",
     "RustDependencyExtractor",
     "JavaDependencyExtractor",
+    "CppDependencyExtractor",
 ]

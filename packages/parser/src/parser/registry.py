@@ -47,6 +47,18 @@ LANGUAGES: dict[str, Language] = {
         grammar_file="java.so",
         tree_sitter_name="java",
     ),
+    "c": Language(
+        name="c",
+        extensions=(".c", ".h"),
+        grammar_file="c.so",
+        tree_sitter_name="c",
+    ),
+    "cpp": Language(
+        name="cpp",
+        extensions=(".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"),
+        grammar_file="cpp.so",
+        tree_sitter_name="cpp",
+    ),
 }
 
 EXTENSION_MAP: dict[str, Language] = {}
@@ -69,6 +81,14 @@ def detect_language(file_path: str) -> Language | None:
         ".go": "go",
         ".rs": "rust",
         ".java": "java",
+        ".c": "c",
+        ".h": "c",
+        ".cpp": "cpp",
+        ".cc": "cpp",
+        ".cxx": "cpp",
+        ".hpp": "cpp",
+        ".hh": "cpp",
+        ".hxx": "cpp",
     }
     name = mapping.get(ext)
     return LANGUAGES.get(name) if name else None

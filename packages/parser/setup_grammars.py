@@ -38,6 +38,16 @@ LANGUAGES = {
         "tag": "v0.23.5",
         "dirs": ["src"],
     },
+    "c": {
+        "repo": "https://github.com/tree-sitter/tree-sitter-c.git",
+        "tag": "v0.23.4",
+        "dirs": ["src"],
+    },
+    "cpp": {
+        "repo": "https://github.com/tree-sitter/tree-sitter-cpp.git",
+        "tag": "v0.23.4",
+        "dirs": ["src"],
+    },
 }
 
 

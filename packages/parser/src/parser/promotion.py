@@ -38,6 +38,9 @@ def derive_is_exported(parsed: ParsedSymbol, language: str) -> bool:
         return meta.get("visibility") == "public"
     if language == "python":
         return not parsed.name.startswith("_")
+    if language in ("c", "cpp"):
+        # Extractors mark statics unexported; types default to exported.
+        return bool(meta.get("exported", True))
     return False
 
 
