@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, BigInteger, ForeignKey, String, Text
+from sqlalchemy import BigInteger, Boolean, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, TimestampMixin, new_uuid, utcnow
+from .base import Base, TimestampMixin, new_uuid
+
+if TYPE_CHECKING:
+    from .repository import Repository
+    from .file import RepositoryFile
+    from .job import IndexingJob
 
 
 class RepositorySnapshot(Base, TimestampMixin):
@@ -27,6 +32,6 @@ class RepositorySnapshot(Base, TimestampMixin):
     indexed: Mapped[bool] = mapped_column(Boolean, default=False)
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)
 
-    repository: Mapped["Repository"] = relationship(back_populates="snapshots")
-    files: Mapped[list["RepositoryFile"]] = relationship(back_populates="last_changed_snapshot", foreign_keys="RepositoryFile.last_changed_snapshot_id")
-    jobs: Mapped[list["IndexingJob"]] = relationship(back_populates="snapshot")
+    repository: Mapped[Repository] = relationship(back_populates="snapshots")
+    files: Mapped[list[RepositoryFile]] = relationship(back_populates="last_changed_snapshot", foreign_keys="RepositoryFile.last_changed_snapshot_id")
+    jobs: Mapped[list[IndexingJob]] = relationship(back_populates="snapshot")

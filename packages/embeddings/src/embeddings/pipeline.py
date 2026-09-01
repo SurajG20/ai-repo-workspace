@@ -5,10 +5,10 @@ from qdrant_client.models import PointStruct
 from shared.models.symbol import IndexedSymbol
 
 from .base import BaseEmbedder
-from .openai_embedder import OpenAIEmbedder
-from .ollama_embedder import OllamaEmbedder
-from .qdrant_store import QdrantStore
 from .chunker import chunk_from_symbol
+from .ollama_embedder import OllamaEmbedder
+from .openai_embedder import OpenAIEmbedder
+from .qdrant_store import QdrantStore
 
 logger = structlog.get_logger(__name__)
 
@@ -78,7 +78,7 @@ class EmbeddingPipeline:
                     vector=v,
                     payload=m,
                 )
-                for m, v in zip(batch_metas, vectors)
+                for m, v in zip(batch_metas, vectors, strict=False)
             ]
             await self._store.upsert_points(collection, points)
             total_stored += len(points)

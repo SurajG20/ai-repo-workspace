@@ -1,4 +1,4 @@
-from retrieval.models import RetrievalHit, SearchSource, SearcherResult
+from retrieval.models import RetrievalHit, SearcherResult, SearchSource
 from retrieval.rerank import reciprocal_rank_fusion
 
 

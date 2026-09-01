@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class ProviderType(str, Enum):
+class ProviderType(StrEnum):
     GITHUB = "github"
     GITLAB = "gitlab"
     LOCAL = "local"
@@ -11,7 +11,7 @@ class ProviderType(str, Enum):
     BITBUCKET = "bitbucket"
 
 
-class RepositoryStatus(str, Enum):
+class RepositoryStatus(StrEnum):
     PENDING = "pending"
     CLONING = "cloning"
     ACTIVE = "active"
@@ -20,7 +20,7 @@ class RepositoryStatus(str, Enum):
     ARCHIVED = "archived"
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -28,7 +28,7 @@ class JobStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class JobType(str, Enum):
+class JobType(StrEnum):
     CLONE = "clone"
     SYNC = "sync"
     PARSE = "parse"
@@ -41,7 +41,7 @@ class JobType(str, Enum):
     SNAPSHOT = "snapshot"
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     PUSH = "push"
     PULL_REQUEST = "pull_request"
     PULL_REQUEST_REVIEW = "pull_request_review"
@@ -50,7 +50,7 @@ class EventType(str, Enum):
     REPOSITORY = "repository"
 
 
-class ChunkType(str, Enum):
+class ChunkType(StrEnum):
     FUNCTION = "function"
     CLASS = "class"
     MODULE = "module"
@@ -61,7 +61,7 @@ class ChunkType(str, Enum):
     DOCSTRING = "docstring"
 
 
-class SymbolKind(str, Enum):
+class SymbolKind(StrEnum):
     FUNCTION = "function"
     CLASS = "class"
     INTERFACE = "interface"
@@ -73,7 +73,7 @@ class SymbolKind(str, Enum):
     PARAMETER = "parameter"
 
 
-class SessionType(str, Enum):
+class SessionType(StrEnum):
     CHAT = "chat"
     PR_REVIEW = "pr_review"
     ONBOARDING = "onboarding"

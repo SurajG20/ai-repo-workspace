@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from shared.crypto import decrypt_secret, encrypt_secret, fernet_for
 from shared.models.symbol import IndexedSymbol, SymbolRelationship, build_symbol_id
 

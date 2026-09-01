@@ -54,7 +54,7 @@ class TypeScriptDependencyExtractor(BaseDependencyExtractor):
             if func_node:
                 if func_node.type == "identifier":
                     name = self._node_text(func_node, source)
-                    if name in symbol_names or True:
+                    if True:
                         relationships.append(SymbolRelationship(
                             source_file=file_path,
                             source_symbol=name,

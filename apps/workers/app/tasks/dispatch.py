@@ -14,11 +14,11 @@ import socket
 from datetime import timedelta
 
 import structlog
-
 from jobs import IndexingPipeline, PostgresJobStore
 
 from ..db import get_pool
 from ..main import app
+
 logger = structlog.get_logger(__name__)
 
 STALE_AFTER = timedelta(minutes=15)

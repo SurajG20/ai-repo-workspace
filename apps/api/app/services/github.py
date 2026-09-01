@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import httpx
 import structlog
 
@@ -94,7 +92,7 @@ class GitHubOAuthService:
 
     async def register_webhook(
         self, access_token: str, owner: str, repo: str, webhook_url: str
-    ) -> Optional[int]:
+    ) -> int | None:
         webhook_secret = settings.github_webhook_secret or settings.api_secret_key[:32]
         try:
             resp = await self.http.post(

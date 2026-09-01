@@ -6,8 +6,8 @@ from .models import (
     RetrievalHit,
     RetrievalResult,
     RetrievalTrace,
-    SearchSource,
     SearcherResult,
+    SearchSource,
 )
 from .pranalysis import PRImpactAnalyzer
 from .qa import (

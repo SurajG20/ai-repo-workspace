@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import structlog
 
-from parser.models import Language as LangConfig, SymbolRelationship
+from parser.models import Language as LangConfig
+from parser.models import SymbolRelationship
+
+if TYPE_CHECKING:
+    from parser.models import ParsedSymbol
 
 logger = structlog.get_logger(__name__)
 
@@ -19,7 +24,7 @@ class BaseDependencyExtractor(ABC):
         tree: object,
         source: bytes,
         file_path: str,
-        symbols: list["ParsedSymbol"],
+        symbols: list[ParsedSymbol],
     ) -> list[SymbolRelationship]:
         ...
 
@@ -28,9 +33,8 @@ class BaseDependencyExtractor(ABC):
         return source[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
 
     @staticmethod
-    def _find_symbol(symbols: list["ParsedSymbol"], name: str, kind: str | None = None) -> str | None:
+    def _find_symbol(symbols: list[ParsedSymbol], name: str, kind: str | None = None) -> str | None:
         for s in symbols:
-            if s.name == name:
-                if kind is None or s.symbol_kind.value == kind:
-                    return s.name
+            if s.name == name and (kind is None or s.symbol_kind.value == kind):
+                return s.name
         return None

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
+
 import structlog
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
     Distance,
-    VectorParams,
     PointStruct,
+    VectorParams,
 )
 
 logger = structlog.get_logger(__name__)
@@ -83,7 +84,7 @@ class QdrantStore:
     ) -> list[dict]:
         query_filter = None
         if filter_kind:
-            from qdrant_client.models import Filter, FieldCondition, MatchValue
+            from qdrant_client.models import FieldCondition, Filter, MatchValue
             query_filter = Filter(
                 must=[
                     FieldCondition(
@@ -117,7 +118,7 @@ class QdrantStore:
         ]
 
     async def delete_repository(self, collection_name: str, repository_id: str) -> int:
-        from qdrant_client.models import Filter, FieldCondition, MatchValue
+        from qdrant_client.models import FieldCondition, Filter, MatchValue
 
         await self._client.delete(
             collection_name=collection_name,

@@ -9,7 +9,8 @@ from parser import (
     to_indexed_symbol,
 )
 from shared.models.repository import SymbolKind
-from shared.models.symbol import IndexedSymbol, SymbolRelationship as SharedRelationship
+from shared.models.symbol import IndexedSymbol
+from shared.models.symbol import SymbolRelationship as SharedRelationship
 
 
 def make_symbol(name="handler", **kwargs) -> ParsedSymbol:

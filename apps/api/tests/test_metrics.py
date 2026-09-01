@@ -3,10 +3,9 @@ from __future__ import annotations
 import re
 
 import pytest
+from app.core.metrics import MetricsMiddleware, metrics_endpoint
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-from app.core.metrics import MetricsMiddleware, metrics_endpoint
 
 
 @pytest.fixture
@@ -39,7 +38,7 @@ def test_metrics_labels_use_route_template_not_raw_path(instrumented_app: FastAP
     client.get("/repos/secret-id-should-never-leak")
     body = client.get("/metrics").text
 
-    line = next(l for l in body.splitlines() if l.startswith("http_requests_total{"))
+    line = next(l for l in body.splitlines() if l.startswith("http_requests_total{"))  # noqa: E741
     assert 'route="/repos/{repository_id}"' in line
     assert "secret-id-should-never-leak" not in body
 

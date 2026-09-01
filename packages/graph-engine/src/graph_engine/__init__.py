@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from .client import Neo4jClient, neo4j_client
-from .sync import GraphSyncEngine
+from .models import GraphRelationship, GraphSymbol, RelationshipType
 from .queries import GraphQueries
-from .models import GraphSymbol, GraphRelationship, RelationshipType
+from .sync import GraphSyncEngine
 
 __all__ = [
     "Neo4jClient",

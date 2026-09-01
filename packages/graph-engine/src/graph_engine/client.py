@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import structlog
 from neo4j import AsyncGraphDatabase, AsyncSession

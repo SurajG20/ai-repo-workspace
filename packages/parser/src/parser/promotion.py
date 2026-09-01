@@ -11,11 +11,14 @@ import uuid
 
 from shared.models.symbol import (
     IndexedSymbol,
-    SymbolRelationship as SharedSymbolRelationship,
     build_symbol_id,
 )
+from shared.models.symbol import (
+    SymbolRelationship as SharedSymbolRelationship,
+)
 
-from .models import ParsedSymbol, SymbolRelationship as ParsedRelationship
+from .models import ParsedSymbol
+from .models import SymbolRelationship as ParsedRelationship
 
 __all__ = [
     "build_symbol_id",

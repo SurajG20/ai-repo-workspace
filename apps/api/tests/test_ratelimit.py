@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.core.ratelimit import (
     EXEMPT_PATHS,
     MemoryRateLimiter,
@@ -11,6 +8,8 @@ from app.core.ratelimit import (
     RateLimitMiddleware,
     RedisRateLimiter,
 )
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

@@ -7,7 +7,8 @@ from pathlib import Path
 import structlog
 
 from .models import Language
-from .registry import Language as LangModel, detect_language
+from .registry import Language as LangModel
+from .registry import detect_language
 
 logger = structlog.get_logger(__name__)
 
@@ -52,7 +53,7 @@ class TreeSitterParser:
         getter.restype = ctypes.c_void_p
         return Language(getter())
 
-    def parse_file(self, file_path: str, source: bytes) -> "tuple[object, LangModel] | None":
+    def parse_file(self, file_path: str, source: bytes) -> tuple[object, LangModel] | None:
         lang_model = detect_language(file_path)
         if lang_model is None:
             return None

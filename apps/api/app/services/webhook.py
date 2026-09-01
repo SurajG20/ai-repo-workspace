@@ -5,10 +5,9 @@ import hmac
 import uuid
 
 import structlog
+from shared.models.repository import EventType, ProviderType
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from shared.models.repository import EventType, ProviderType
 
 from ..config import settings
 from ..models.repository import Repository

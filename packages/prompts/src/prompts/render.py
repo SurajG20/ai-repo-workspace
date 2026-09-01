@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from .templates import (
     ARCHITECTURE_PROMPT,
     DEAD_CODE_PROMPT,

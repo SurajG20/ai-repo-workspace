@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
-
 import structlog
-
-from parser.base_extractor import KIND_MAP, BaseSymbolExtractor
-from parser.models import ParsedSymbol
 from shared.models.repository import SymbolKind
+
+from parser.base_extractor import BaseSymbolExtractor
+from parser.models import ParsedSymbol
 
 logger = structlog.get_logger(__name__)
 

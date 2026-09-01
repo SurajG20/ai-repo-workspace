@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 
 import structlog
-
 from graph_engine import Neo4jClient
 
 from ..models import SearcherResult, SearchSource
@@ -82,7 +81,7 @@ class SymbolSearcher(BaseSearcher):
             prefix_scores = [1.0 / (i + 2) for i in range(len(prefix))]
             hits += [
                 self._hit_from_row(r, score=score, sources=[self.source.value])
-                for r, score in zip(prefix, prefix_scores)
+                for r, score in zip(prefix, prefix_scores, strict=False)
             ]
             return SearcherResult(
                 source=self.source,

@@ -3,10 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from parser import get_dependency_extractor, get_extractor
-from parser.registry import LANGUAGES, detect_language
 from parser.engine import TreeSitterParser
+from parser.registry import LANGUAGES, detect_language
 from shared.models.repository import SymbolKind
 
 GRAMMARS_DIR = Path(__file__).parent.parent / "grammars"
@@ -146,7 +145,7 @@ def test_include_relationships_resolve_inside_repo():
 
 
 def test_promotion_exports_for_c_cpp():
-    from parser import derive_is_exported, ParsedSymbol
+    from parser import ParsedSymbol, derive_is_exported
 
     fn = ParsedSymbol(file_path="a.c", name="run", symbol_kind=SymbolKind.FUNCTION,
                       metadata={"exported": True})

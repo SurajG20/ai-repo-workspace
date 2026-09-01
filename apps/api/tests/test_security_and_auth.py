@@ -4,8 +4,6 @@ import hashlib
 import hmac
 import uuid
 
-import pytest
-from app.config import settings
 from app.core.security import (
     create_access_token,
     decode_access_token,

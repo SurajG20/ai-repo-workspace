@@ -4,7 +4,6 @@ import os
 import time
 
 import structlog
-
 from embeddings import BaseEmbedder, OllamaEmbedder, OpenAIEmbedder, QdrantStore
 
 from ..models import SearcherResult, SearchSource

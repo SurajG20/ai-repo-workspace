@@ -3,9 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 import structlog
-
-from parser.models import Language as LangConfig, ParsedSymbol
 from shared.models.repository import SymbolKind
+
+from parser.models import Language as LangConfig
+from parser.models import ParsedSymbol
 
 logger = structlog.get_logger(__name__)
 

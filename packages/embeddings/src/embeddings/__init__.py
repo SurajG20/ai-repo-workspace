@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from .base import BaseEmbedder
-from .openai_embedder import OpenAIEmbedder
+from .chunker import chunk_from_symbol, chunk_module, chunk_symbol
 from .ollama_embedder import OllamaEmbedder
-from .qdrant_store import QdrantStore
+from .openai_embedder import OpenAIEmbedder
 from .pipeline import EmbeddingPipeline
-from .chunker import chunk_module, chunk_from_symbol, chunk_symbol
+from .qdrant_store import QdrantStore
 
 __all__ = [
     "BaseEmbedder",

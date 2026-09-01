@@ -1,8 +1,6 @@
 """Setup script: downloads and compiles tree-sitter grammars."""
 
-import os
 import subprocess
-import sys
 from pathlib import Path
 
 GRAMMARS_DIR = Path(__file__).parent / "grammars"
@@ -64,7 +62,7 @@ def setup() -> None:
         print(f"\n=== {name} ===")
 
         if repo_dir.exists():
-            print(f"  Already cloned, skipping")
+            print("  Already cloned, skipping")
         else:
             run(["git", "clone", "--depth=1", "--branch", config["tag"], config["repo"], str(repo_dir)])
 

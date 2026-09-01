@@ -1,6 +1,22 @@
 from __future__ import annotations
 
+from .dependencies import (
+    CppDependencyExtractor,
+    GoDependencyExtractor,
+    JavaDependencyExtractor,
+    PythonDependencyExtractor,
+    RustDependencyExtractor,
+    TypeScriptDependencyExtractor,
+)
 from .engine import TreeSitterParser
+from .extractors import (
+    CppExtractor,
+    GoExtractor,
+    JavaExtractor,
+    PythonExtractor,
+    RustExtractor,
+    TypeScriptExtractor,
+)
 from .models import ParsedSymbol, SymbolRelationship
 from .promotion import (
     build_symbol_id,
@@ -10,22 +26,6 @@ from .promotion import (
 )
 from .registry import LANGUAGES, detect_language
 from .resolver import ModulePathResolver
-from .extractors import (
-    TypeScriptExtractor,
-    PythonExtractor,
-    GoExtractor,
-    RustExtractor,
-    JavaExtractor,
-    CppExtractor,
-)
-from .dependencies import (
-    TypeScriptDependencyExtractor,
-    PythonDependencyExtractor,
-    GoDependencyExtractor,
-    RustDependencyExtractor,
-    JavaDependencyExtractor,
-    CppDependencyExtractor,
-)
 
 _EXTRACTORS = {
     "typescript": TypeScriptExtractor,

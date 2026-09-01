@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import shutil
 
@@ -42,10 +43,8 @@ async def snapshot_stage(local_path: str, repository_id: str) -> dict:
             if ".git" in root:
                 continue
             file_count += 1
-            try:
+            with contextlib.suppress(OSError):
                 total_size += os.path.getsize(os.path.join(root, f))
-            except OSError:
-                pass
 
     return {
         "status": "completed",

@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 
 import structlog
-
 from prompts import build_qa_messages
 
 from ..engine import HybridRetrievalEngine

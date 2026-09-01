@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 
 import structlog
-
 from graph_engine import Neo4jClient
 
 from ..models import SearcherResult, SearchSource

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class Stage(str, Enum):
+class Stage(StrEnum):
     CLONE = "clone"
     SNAPSHOT = "snapshot"
     PARSE = "parse"
