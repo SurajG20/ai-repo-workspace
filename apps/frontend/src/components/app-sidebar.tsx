@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   MessageSquareText,
   ScanSearch,
-  Settings2,
   Workflow,
 } from "lucide-react";
 
@@ -44,10 +43,6 @@ const groups = [
       { title: "Dead Code", url: "/dead-code", icon: ScanSearch },
       { title: "Pipeline", url: "/pipeline", icon: Workflow },
     ],
-  },
-  {
-    label: "System",
-    items: [{ title: "Settings", url: "/settings", icon: Settings2 }],
   },
 ];
 

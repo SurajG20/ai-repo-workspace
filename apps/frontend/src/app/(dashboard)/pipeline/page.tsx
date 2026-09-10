@@ -143,7 +143,7 @@ export default function PipelinePage() {
 
       <div className="flex items-center gap-2 px-1">
         <Badge variant="outline" className="font-data text-[10px]">
-          phases 0–9 in Workflow.md
+          phases 0–9 in AGENTS.md
         </Badge>
         <Badge variant="outline" className="font-data text-[10px]">
           GraphRAG: deterministic retrieval before any LLM call
