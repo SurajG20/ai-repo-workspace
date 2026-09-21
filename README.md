@@ -1,109 +1,118 @@
-# AI Repository Workspace (Graphmind)
+# GraphMind
 
-An open-source, self-hosted AI-native repository intelligence and GraphRAG platform for solo developers and OSS maintainers.
+> Repo: [SurajG20/ai-repo-workspace](https://github.com/SurajG20/ai-repo-workspace) — self-hosted **GraphRAG for codebases**.
 
-> *"An AI operating system for repositories."*
+**Ask architecture questions and get answers grounded in symbols, call graphs, and retrieved chunks** (with `file:line` citations).
 
----
+## Problem
 
-## Key Capabilities
+Generic “chat with repo” tools embed files and hallucinate structure. Maintainers need a **deterministic** map of symbols and relationships, **hybrid retrieval** when questions are fuzzy, and **evidence** for every claim — without sending the whole repository to an LLM on every query.
 
-* **Deterministic Symbol Graph**: Extracts AST-level symbols and relationships using Tree-sitter across TypeScript, JavaScript, Python, Go, Rust, and Java into Neo4j (`CALLS`, `USES`, `CONTAINS`, `IMPORTS_MODULE`).
-* **Hybrid 4-Way Retrieval**: Fuses vector search (Qdrant), exact/fuzzy symbol lookup (Neo4j), keyword matching, and graph neighbor traversals with **Reciprocal Rank Fusion (RRF)**.
-* **GraphRAG Grounded Q&A**: Answers architectural and codebase questions strictly grounded in retrieved evidence with `file:line` citations. Degrades to pure deterministic retrieval if no LLM key is supplied.
-* **Dead Code Detection**: AST and graph reachability analysis identifying unused exports, unreferenced functions, and orphaned modules.
-* **PR Blast-Radius Impact Analysis**: Analyzes pull request changes and computes transitive downstream dependencies and affected symbols.
-* **Postgres-as-Queue Indexing Pipeline**: Durable, crash-resilient DAG engine with atomic claim reservation, retry backoff, and automatic artifact lifecycle cleanup.
-* **Interactive Architecture Explorer**: Visual constellation and call-graph explorer built with Next.js 14, React Flow, and TailwindCSS.
+## Approach
 
----
+1. **Parse first** — Tree-sitter builds an AST-level symbol graph (`CALLS`, `USES`, `CONTAINS`, `IMPORTS_MODULE`) before any model runs.
+2. **Index twice** — Neo4j for graph traversals; Qdrant for semantic chunks.
+3. **Retrieve with fusion** — vector + symbol lookup + keyword + graph neighbors, merged with **Reciprocal Rank Fusion (RRF)**.
+4. **Answer with citations** — QA uses only retrieved evidence; with no API key, falls back to deterministic retrieval-only mode.
 
-## Quick Start
+## Architecture
 
-```bash
-# 1. Clone repository
-git clone https://github.com/SurajG20/ai-repo-workspace.git && cd ai-repo-workspace
-
-# 2. Configure environment
-cp .env.example .env
-
-# 3. Launch all services
-docker compose up -d
 ```
-
-Open **http://localhost:8080** (or **http://localhost:3000**) for the dashboard and **http://localhost:8000/docs** for the API documentation.
-
----
-
-## Services & Ports
-
-| Service | Port | Description |
-|---|---|---|
-| **Frontend** | `http://localhost:3000` (or `8080`) | Next.js 14 developer dashboard & architecture explorer |
-| **API** | `http://localhost:8000` | FastAPI backend with OpenAPI documentation at `/docs` |
-| **Nginx** | `http://localhost:8080` | Reverse proxy mapping API and frontend |
-| **Neo4j** | `http://localhost:7474` (Bolt: `7687`) | Cypher query console and graph database |
-| **Qdrant** | `http://localhost:6333` | Vector database dashboard & REST/gRPC API |
-| **PostgreSQL** | `localhost:5432` | Relational store & job queue (`pgvector/pgvector:pg16`) |
-| **Redis** | `localhost:6379` | Task queue broker & cache |
-| **Ollama** *(optional)* | `http://localhost:11434` | Local model inference (enabled via `--profile ai`) |
-
----
-
-## Architecture & Monorepo Structure
+Repository → Parser (Tree-sitter) → Neo4j graph + Qdrant vectors
+              ↓
+         Postgres indexing DAG (queue, retries, lifecycle)
+              ↓
+FastAPI API ← Celery workers → Hybrid retrieval + GraphRAG QA
+              ↓
+Next.js dashboard (explorer, PR blast-radius, dead-code views)
+```
 
 ```
 graphmind/
 ├── apps/
 │   ├── api/             # FastAPI backend (auth, repositories, webhooks, intelligence)
 │   ├── frontend/        # Next.js 14 App Router with React Flow & shadcn/ui
-│   └── workers/         # Celery executors & Indexing Pipeline dispatchers
+│   └── workers/         # Celery executors & indexing pipeline dispatchers
 ├── packages/
 │   ├── parser/          # Multi-language Tree-sitter AST engine & symbol extractors
 │   ├── graph-engine/    # Neo4j graph synchronization & graph queries
 │   ├── embeddings/      # Structural chunking & Qdrant vector client
-│   ├── retrieval/       # Hybrid search engine, RRF reranker, QA pipeline, dead code & PR impact
-│   ├── prompts/         # Jinja2 prompt templates & message builders
-│   ├── jobs/            # Indexing Pipeline (Postgres-as-queue DAG engine)
-│   └── shared/          # Canonical domain models, IndexedSymbol contracts & Fernet crypto
-├── infrastructure/
-│   ├── docker/          # Dockerfiles for API, worker, frontend, and nginx
-│   ├── nginx/           # Reverse proxy configuration
-│   └── scripts/         # Dev setup & entrypoint scripts
-└── docker-compose.yml   # Multi-service container orchestration
+│   ├── retrieval/       # Hybrid search, RRF, QA, dead code & PR impact
+│   ├── prompts/         # Jinja2 prompt templates
+│   ├── jobs/            # Indexing pipeline (Postgres-as-queue DAG)
+│   └── shared/          # Domain models & shared contracts
+├── infrastructure/      # Docker, nginx, scripts
+└── docker-compose.yml
 ```
 
+## Tech
+
+FastAPI · Celery · PostgreSQL (pgvector) · Redis · Neo4j · Qdrant · Tree-sitter · Next.js 14 · React Flow · Docker Compose · optional Ollama · BYOK OpenAI / Anthropic
+
+## Decisions
+
+| Decision | Why |
+|----------|-----|
+| Symbol graph before LLM | Reproducible grounding; same repo → same graph. |
+| RRF over a single retriever | Code questions need semantic and structural paths. |
+| Postgres-as-queue for indexing | Durable DAG with crash-safe claims and backoff. |
+| Degrade without LLM key | Explore retrieval and graph tooling without paid APIs. |
+
+## Results
+
+- Hybrid **4-way** retrieval plus GraphRAG Q&A with citations.
+- **Dead code** and **PR blast-radius** analysis on the same graph.
+- One-command **`docker compose up`** for API, workers, UI, and data stores.
+
+## Demo
+
+```bash
+git clone https://github.com/SurajG20/ai-repo-workspace.git && cd ai-repo-workspace
+cp .env.example .env
+docker compose up -d
+```
+
+- Dashboard: **http://localhost:8080** (or **http://localhost:3000**)
+- API docs: **http://localhost:8000/docs**
+
 ---
+
+## Capabilities (detail)
+
+- **Deterministic symbol graph** — TypeScript, JavaScript, Python, Go, Rust, Java.
+- **GraphRAG grounded Q&A** — evidence-only answers with `file:line` citations.
+- **Dead code detection** — reachability over exports and call graph.
+- **PR blast-radius** — transitive downstream impact for changed symbols.
+- **Architecture explorer** — interactive constellation / call-graph UI.
+
+## Services & ports
+
+| Service | Port | Description |
+|---|---|---|
+| **Frontend** | `3000` / `8080` | Next.js dashboard & architecture explorer |
+| **API** | `8000` | FastAPI + OpenAPI at `/docs` |
+| **Nginx** | `8080` | Reverse proxy |
+| **Neo4j** | `7474` (Bolt `7687`) | Graph database |
+| **Qdrant** | `6333` | Vector store |
+| **PostgreSQL** | `5432` | Relational store & job queue |
+| **Redis** | `6379` | Broker & cache |
+| **Ollama** *(optional)* | `11434` | Local models (`--profile ai`) |
 
 ## Development
 
-### Running the Test Suite
+### Tests
 
 ```bash
-# Run all tests (shared, parser, jobs, prompts, embeddings, retrieval, graph-engine, api)
 pytest
 ```
 
-### Running Locally (without Docker)
+### Local (without Docker)
 
 ```bash
-# Backend
-cd apps/api
-pip install -e .
-uvicorn app.main:app --reload --port 8000
-
-# Workers
-cd apps/workers
-pip install -e .
-celery -A app.main worker --loglevel=info
-
-# Frontend
-cd apps/frontend
-npm install
-npm run dev
+cd apps/api && pip install -e . && uvicorn app.main:app --reload --port 8000
+cd apps/workers && pip install -e . && celery -A app.main worker --loglevel=info
+cd apps/frontend && npm install && npm run dev
 ```
-
----
 
 ## License
 
